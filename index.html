@@ -133,6 +133,10 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
 
 .fday{margin:14px 0 6px;padding:8px 12px;border-radius:12px;background:rgba(128,128,128,.14);font-weight:700}
 .fday small{display:block;font-weight:400;opacity:.8;margin-top:2px}
+.fitem{border:1px solid rgba(128,128,128,.4);border-radius:12px;padding:10px;margin-bottom:10px}
+.fitem-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:700}
+.fitem .fgrid{margin:0}
+.fitem-v{margin-top:6px;font-size:.9rem;opacity:.85}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .fgrid .full{grid-column:1/-1}
 .fgrid label{display:block;font-size:13px;margin-bottom:3px}
@@ -174,11 +178,11 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         <div class="full"><label>اسم الزبون</label><input id="fCust"></div>
         <div class="full"><label>رقم الهاتف</label><input id="fPhone" type="tel" inputmode="tel"></div>
         <div class="full bar noprint"><button type="button" id="fContact">📇 حفظ في جهات الاتصال</button><button type="button" id="fThanks">💬 إرسال شكر عبر واتساب</button></div>
-        <div><label>اسم المادة</label><input id="fName"></div>
-        <div><label>رقم المادة</label><input id="fNum"></div>
-        <div><label>عدد الأمتار</label><input id="fMeters" type="number" inputmode="decimal"></div>
-        <div><label>سعر المتر</label><input id="fPrice" type="number" inputmode="decimal"></div>
-        <div><label>قيمة الفاتورة (متر × سعر)</label><input id="fInv" type="number" inputmode="decimal"></div>
+        <div class="full" id="fItems"></div>
+        <div class="full bar noprint"><button type="button" id="fAddItem">+ إضافة مادة</button></div>
+        <div class="full"><label>قيمة الفاتورة (مجموع المواد)</label><input id="fInv" type="number" inputmode="decimal"></div>
+        <div class="full"><label>الحسم</label><input id="fDisc" type="number" inputmode="decimal"></div>
+        <div class="full calc" id="fNet">صافي الفاتورة: <b>0</b></div>
         <div><label>الدفعة</label><input id="fPaid" type="number" inputmode="decimal"></div>
         <div><label>الدفعة الثانية</label><input id="fPaid2" type="number" inputmode="decimal"></div>
         <div><label>تاريخ الدفعة الثانية</label><input id="fPaid2d" type="date"></div>
@@ -768,15 +772,15 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function renderFab(){
     var q=(document.getElementById("fabQ").value||"").trim().toLowerCase(),days={};
-    fabs.filter(function(f){return !q||(f.cust+" "+(f.phone||"")+" "+f.name+" "+f.num).toLowerCase().indexOf(q)>-1;}).forEach(function(f){(days[f.date]=days[f.date]||[]).push(f);});
+    fabs.filter(function(f){return !q||(f.cust+" "+(f.phone||"")+" "+f.name+" "+f.num+" "+itemsOf(f).map(function(x){return (x.name||"")+" "+(x.num||"");}).join(" ")).toLowerCase().indexOf(q)>-1;}).forEach(function(f){(days[f.date]=days[f.date]||[]).push(f);});
     var keys=Object.keys(days).sort().reverse(),h="";
     keys.forEach(function(k){
-      var it=days[k],ti=0,tp=0,tm=0;it.forEach(function(f){ti+=fnum(f.inv);tp+=fnum(f.paid)+fnum(f.paid2);tm+=fnum(f.meters);});
+      var it=days[k],ti=0,tp=0,tm=0;it.forEach(function(f){ti+=fnet(f);tp+=fnum(f.paid)+fnum(f.paid2);tm+=fnum(f.meters);});
       h+='<div class="fday">'+esc(dayLabel(k))+'<small>'+it.length+' زبون — الأمتار: '+fmoney(tm)+' — الفواتير: '+fmoney(ti)+' — الدفعات: '+fmoney(tp)+' — المتبقي: '+fmoney(ti-tp)+'</small></div>';
       it.sort(function(a,b){return b.id-a.id;}).forEach(function(f){
         h+='<section class="job"><div class="job-top"><h2>'+esc(f.cust||"زبون بدون اسم")+'</h2></div>'+
-          '<div class="job-meta">'+(f.phone?esc(f.phone)+' — ':'')+esc(f.name||"")+(f.num?' — رقم '+esc(f.num):'')+(f.meters?' — '+fmoney(fnum(f.meters))+' م':'')+'</div>'+
-          '<div class="job-meta">الفاتورة: '+fmoney(fnum(f.inv))+(f.price?' ('+fmoney(fnum(f.price))+' للمتر)':'')+' — الدفعة: '+fmoney(fnum(f.paid))+(fnum(f.paid2)?' + '+fmoney(fnum(f.paid2))+(f.paid2d?' ('+esc(f.paid2d)+')':''):'')+' — <span class="frem">المتبقي: '+fmoney(fnum(f.inv)-fnum(f.paid)-fnum(f.paid2))+'</span></div>'+(f.del?'<div class="job-meta">📅 التسليم: '+esc(f.del)+'</div>':'')+
+          '<div class="job-meta">'+(f.phone?esc(f.phone)+' — ':'')+(itemsOf(f).length>1?'</div>'+itemsOf(f).map(function(x){return '<div class="job-meta">• '+esc(x.name||"مادة")+(x.num?' — رقم '+esc(x.num):'')+(x.meters?' — '+fmoney(fnum(x.meters))+' م':'')+(x.price?' × '+fmoney(fnum(x.price)):'')+'</div>';}).join(""):esc(f.name||"")+(f.num?' — رقم '+esc(f.num):'')+(f.meters?' — '+fmoney(fnum(f.meters))+' م':'')+'</div>')+
+          '<div class="job-meta">الفاتورة: '+fmoney(fnum(f.inv))+(fnum(f.disc)?' — الحسم: '+fmoney(fnum(f.disc))+' — الصافي: '+fmoney(fnet(f)):'')+(f.price?' ('+fmoney(fnum(f.price))+' للمتر)':'')+' — الدفعة: '+fmoney(fnum(f.paid))+(fnum(f.paid2)?' + '+fmoney(fnum(f.paid2))+(f.paid2d?' ('+esc(f.paid2d)+')':''):'')+' — <span class="frem">المتبقي: '+fmoney(fnet(f)-fnum(f.paid)-fnum(f.paid2))+'</span></div>'+(f.del?'<div class="job-meta">📅 التسليم: '+esc(f.del)+'</div>':'')+
           '<div class="bar"><button type="button" class="primary" data-fe="'+f.id+'">تعديل</button><button type="button" class="del" data-fd="'+f.id+'">حذف</button></div></section>';
       });
     });
@@ -784,15 +788,17 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function openFabForm(f){
     fabEdit=f?f.id:null;
-    document.getElementById("fCust").value=f?f.cust:"";document.getElementById("fPhone").value=f?(f.phone||""):"";document.getElementById("fName").value=f?f.name:"";
-    document.getElementById("fNum").value=f?f.num:"";document.getElementById("fMeters").value=f?(f.meters||""):"";document.getElementById("fPrice").value=f?(f.price||""):"";document.getElementById("fPaid2").value=f?(f.paid2||""):"";document.getElementById("fPaid2d").value=f?(f.paid2d||""):"";document.getElementById("fDel").value=f?(f.del||""):"";document.getElementById("fInv").value=f?f.inv:"";
-    document.getElementById("fPaid").value=f?f.paid:"";document.getElementById("fDate").value=f?f.date:ftoday();
+    document.getElementById("fCust").value=f?f.cust:"";document.getElementById("fPhone").value=f?(f.phone||""):"";fItemsCur=f?itemsOf(f).map(function(x){return {name:x.name||"",num:x.num||"",meters:x.meters||"",price:x.price||""};}):[blankItem()];if(!fItemsCur.length)fItemsCur=[blankItem()];renderItems();
+    document.getElementById("fPaid2").value=f?(f.paid2||""):"";document.getElementById("fPaid2d").value=f?(f.paid2d||""):"";document.getElementById("fDel").value=f?(f.del||""):"";document.getElementById("fInv").value=f?f.inv:"";document.getElementById("fDisc").value=f?(f.disc||""):"";
+    document.getElementById("fPaid").value=f?f.paid:"";document.getElementById("fDate").value=f?f.date:ftoday();updNet();
     document.getElementById("fabForm").hidden=false;document.getElementById("fCust").focus();
   }
   document.getElementById("fabNew").addEventListener("click",function(){openFabForm(null);});
   document.getElementById("fCancel").addEventListener("click",function(){document.getElementById("fabForm").hidden=true;});
   document.getElementById("fSave").addEventListener("click",function(){
-    var r={cust:document.getElementById("fCust").value.trim(),phone:document.getElementById("fPhone").value.trim(),name:document.getElementById("fName").value.trim(),num:document.getElementById("fNum").value.trim(),meters:document.getElementById("fMeters").value,price:document.getElementById("fPrice").value,paid2:document.getElementById("fPaid2").value,paid2d:document.getElementById("fPaid2d").value,del:document.getElementById("fDel").value,inv:document.getElementById("fInv").value,paid:document.getElementById("fPaid").value,date:document.getElementById("fDate").value||ftoday()};
+    var cleanItems=fItemsCur.filter(function(x){return x.name||x.num||x.meters||x.price;}).map(function(x){return {name:x.name.trim(),num:x.num.trim(),meters:x.meters,price:x.price};});
+    var totM=0;cleanItems.forEach(function(x){totM+=fnum(x.meters);});
+    var r={cust:document.getElementById("fCust").value.trim(),phone:document.getElementById("fPhone").value.trim(),items:cleanItems,name:cleanItems.map(function(x){return x.name;}).filter(Boolean).join(" + "),num:cleanItems.map(function(x){return x.num;}).filter(Boolean).join(" + "),meters:totM?String(Math.round(totM*100)/100):"",price:cleanItems.length===1?cleanItems[0].price:"",paid2:document.getElementById("fPaid2").value,paid2d:document.getElementById("fPaid2d").value,del:document.getElementById("fDel").value,inv:document.getElementById("fInv").value,disc:document.getElementById("fDisc").value,paid:document.getElementById("fPaid").value,date:document.getElementById("fDate").value||ftoday()};
     if(!r.cust&&!r.name){alert("اكتب اسم الزبون أو المادة");return;}
     if(fabEdit){fabs.forEach(function(f){if(f.id===fabEdit){for(var k in r)f[k]=r[k];}});}
     else{r.id=Date.now();fabs.push(r);}
@@ -807,9 +813,38 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   });
   document.getElementById("fabHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
 
-  function autoInv(){var m=fnum(document.getElementById("fMeters").value),pr=fnum(document.getElementById("fPrice").value);if(m&&pr)document.getElementById("fInv").value=Math.round(m*pr*100)/100;}
-  document.getElementById("fMeters").addEventListener("input",autoInv);
-  document.getElementById("fPrice").addEventListener("input",autoInv);
+  var fItemsCur=[];
+  function blankItem(){return {name:"",num:"",meters:"",price:""};}
+  function itemsOf(f){if(f.items&&f.items.length)return f.items;if(f.name||f.num||f.meters||f.price)return [{name:f.name||"",num:f.num||"",meters:f.meters||"",price:f.price||""}];return [];}
+  function fnet(f){return fnum(f.inv)-fnum(f.disc);}
+  function updNet(){var n=fnum(document.getElementById("fInv").value)-fnum(document.getElementById("fDisc").value);document.getElementById("fNet").innerHTML="صافي الفاتورة: <b>"+fmoney(n)+"</b>";}
+  function itemVal(x){return Math.round(fnum(x.meters)*fnum(x.price)*100)/100;}
+  function renderItems(){
+    var h="";
+    fItemsCur.forEach(function(x,i){
+      h+='<div class="fitem"><div class="fitem-h"><span>مادة '+(i+1)+'</span>'+(fItemsCur.length>1?'<button type="button" class="del" data-idel="'+i+'">حذف المادة</button>':'')+'</div>'+
+        '<div class="fgrid"><div><label>اسم المادة</label><input data-ik="name" data-i="'+i+'" value="'+esc(x.name)+'"></div>'+
+        '<div><label>رقم المادة</label><input data-ik="num" data-i="'+i+'" value="'+esc(x.num)+'"></div>'+
+        '<div><label>عدد الأمتار</label><input data-ik="meters" data-i="'+i+'" type="number" inputmode="decimal" value="'+esc(x.meters)+'"></div>'+
+        '<div><label>سعر المتر</label><input data-ik="price" data-i="'+i+'" type="number" inputmode="decimal" value="'+esc(x.price)+'"></div></div>'+
+        '<div class="fitem-v">قيمة المادة: <b data-iv="'+i+'">'+fmoney(itemVal(x))+'</b></div></div>';
+    });
+    document.getElementById("fItems").innerHTML=h;
+  }
+  function autoInv(){var s=0;fItemsCur.forEach(function(x){s+=itemVal(x);});if(s>0)document.getElementById("fInv").value=Math.round(s*100)/100;updNet();}
+  document.getElementById("fInv").addEventListener("input",updNet);
+  document.getElementById("fDisc").addEventListener("input",updNet);
+  document.getElementById("fItems").addEventListener("input",function(e){
+    var el=e.target,k=el.getAttribute("data-ik");if(!k)return;
+    var i=+el.getAttribute("data-i");fItemsCur[i][k]=el.value;
+    var v=document.querySelector('[data-iv="'+i+'"]');if(v)v.textContent=fmoney(itemVal(fItemsCur[i]));
+    autoInv();
+  });
+  document.getElementById("fItems").addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;var i=b.getAttribute("data-idel");
+    if(i!==null&&fItemsCur.length>1){fItemsCur.splice(+i,1);renderItems();autoInv();}
+  });
+  document.getElementById("fAddItem").addEventListener("click",function(){fItemsCur.push(blankItem());renderItems();var ins=document.querySelectorAll("#fItems .fitem");var last=ins[ins.length-1];if(last){var inp=last.querySelector("input");if(inp)inp.focus();}});
   /* ---------- delivery reminders (day before) ---------- */
   function addDays(n){var d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
   function reminders(){
