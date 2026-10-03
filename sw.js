@@ -1,4 +1,4 @@
-var CACHE="khushfa-measure-v24";
+var CACHE="khushfa-measure-v25";
 var FILES=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./apple-touch-icon.png"];
 self.addEventListener("install",function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(FILES);}).then(function(){return self.skipWaiting();}));
@@ -10,18 +10,17 @@ self.addEventListener("activate",function(e){
 });
 self.addEventListener("fetch",function(e){
   if(e.request.method!=="GET")return;
-  /* network first (so updates arrive), cache as offline fallback */
+  /* cache first = instant open; refresh the cache in the background so the next open has the latest version */
   e.respondWith(
-    fetch(e.request).then(function(res){
-      if(res&&(res.status===200||res.type==="opaque")){
-        var copy=res.clone();
-        caches.open(CACHE).then(function(c){c.put(e.request,copy);});
-      }
-      return res;
-    }).catch(function(){
-      return caches.match(e.request).then(function(hit){
-        return hit||(e.request.mode==="navigate"?caches.match("./index.html"):undefined);
-      });
+    caches.match(e.request,{ignoreSearch:true}).then(function(hit){
+      var net=fetch(e.request).then(function(res){
+        if(res&&res.status===200){
+          var copy=res.clone();
+          caches.open(CACHE).then(function(c){c.put(e.request,copy);});
+        }
+        return res;
+      }).catch(function(){return hit||(e.request.mode==="navigate"?caches.match("./index.html"):undefined);});
+      return hit||net;
     })
   );
 });
