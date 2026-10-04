@@ -186,7 +186,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   
   
   <div class="bar noprint tool" id="toolbar" hidden>
-    <button type="button" id="goHome" aria-label="الرئيسية" style="flex:0 0 56px">🏠</button>
+    <button type="button" id="goHome" aria-label="الرئيسية" style="flex:0 0 56px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></button>
     <button type="button" class="primary" id="newJob">+ زبون جديد</button>
     <button type="button" id="showList">👥 الزبائن</button>
   </div>
@@ -207,7 +207,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   </div>
 
   <div id="fabView" hidden>
-    <div class="bar noprint"><button type="button" id="fabHome" aria-label="الرئيسية" style="flex:0 0 56px">🏠</button><button type="button" class="primary" id="fabNew">+ زبون جديد</button></div>
+    <div class="bar noprint"><button type="button" id="fabHome" aria-label="الرئيسية" style="flex:0 0 56px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></button><button type="button" class="primary" id="fabNew">+ زبون جديد</button></div>
     <h2 class="sub" style="margin:10px 0">أقمشة كنب - تشكيلات</h2>
     <input id="fabQ" type="search" placeholder="بحث: زبون أو مادة أو رقم" style="width:100%;box-sizing:border-box;padding:10px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit">
     <section class="job" id="fabForm" hidden>
@@ -1310,6 +1310,30 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(hadSW&&!reloaded){reloaded=true;location.reload();}});
   window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").then(function(r){try{r.update();}catch(e){}}).catch(function(){});});
 }
+</script>
+<script>
+/* old Windows (7) has no colour emoji: drop emoji characters there, keep the text */
+(function(){
+  try{
+    var c=document.createElement("canvas");c.width=c.height=40;var x=c.getContext("2d");
+    x.textBaseline="top";x.font="28px sans-serif";x.fillText("\uD83C\uDFE0",2,2);
+    var d=x.getImageData(0,0,40,40).data,color=false;
+    for(var i=0;i<d.length;i+=4){if(d[i+3]>40&&(Math.abs(d[i]-d[i+1])>25||Math.abs(d[i+1]-d[i+2])>25)){color=true;break;}}
+    if(color)return;
+  }catch(e){return;}
+  var RE=/[\uD83C-\uD83E][\uDC00-\uDFFF]\uFE0F?\s?|[\u2B50\u26A0\u2753\u270F\u2705\uFE0F]\s?/g;
+  function clean(root){
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false),n,list=[];
+    while((n=w.nextNode())){var pn=n.parentNode&&n.parentNode.nodeName;if(pn==="SCRIPT"||pn==="STYLE")continue;if(RE.test(n.nodeValue))list.push(n);RE.lastIndex=0;}
+    list.forEach(function(t){t.nodeValue=t.nodeValue.replace(RE,"");});
+  }
+  function run(){clean(document.body);}
+  if(window.MutationObserver){
+    var busy=false;
+    new MutationObserver(function(){if(busy)return;busy=true;setTimeout(function(){busy=false;run();},30);}).observe(document.body,{childList:true,subtree:true,characterData:true});
+  }
+  run();
+})();
 </script>
 </body>
 </html>
