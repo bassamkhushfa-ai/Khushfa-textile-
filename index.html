@@ -230,7 +230,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     <div class="total" id="sum"></div>
     <div class="grid" style="margin-top:10px" id="foot">
       <div class="full"><label>ملاحظات عامة</label><textarea data-h="notes"></textarea></div>
-      <div><label>موعد التركيب المتفق عليه</label><input data-h="install" type="date"></div>
+      <div><label id="lblInstall">موعد التركيب المتفق عليه</label><input data-h="install" type="date"></div>
       <div><label>العربون المدفوع</label><input data-h="deposit" inputmode="decimal"></div>
       <div><label>الدفعة الثانية</label><input data-h="deposit2" inputmode="decimal"></div>
       <div><label>تاريخ الدفعة الثانية</label><input data-h="deposit2date" type="date"></div>
@@ -296,6 +296,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function delPhoto(id){return tx("readwrite",function(s){return s.delete(id);}).catch(function(){});}
   function clearPhotos(){return tx("readwrite",function(s){return s.clear();}).catch(function(){});}
   function dropPhotos(ids){(ids||[]).forEach(delPhoto);}
+  function twoStep(a,b){return confirm(a)&&confirm("⚠️ تحذير أخير: "+b);}
   function shrink(file){
     return new Promise(function(res,rej){
       var u=URL.createObjectURL(file),im=new Image();
@@ -603,17 +604,21 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       wEl.querySelector('input[data-file="'+b.getAttribute("data-pick")+'"]').click();
     }else if(b.hasAttribute("data-delphoto")){
       var id=b.getAttribute("data-delphoto"),w=state.rooms[ri].wins[wi];
-      w.photos=w.photos.filter(function(x){return x!==id;});
-      delPhoto(id);save();refreshPhotos(wEl,w);
+      if(twoStep("هل تريد حذف هذه الصورة؟","سيتم حذف الصورة نهائياً ولا يمكن استرجاعها.")){
+        w.photos=w.photos.filter(function(x){return x!==id;});
+        delPhoto(id);save();refreshPhotos(wEl,w);
+      }
     }else if(b.hasAttribute("data-delroom")){
-      if(confirm("حذف هذه الغرفة بكل نوافذها؟")){
+      if(twoStep("هل تريد حذف هذه الغرفة بكل نوافذها؟","سيتم حذف كل قياسات وصور هذه الغرفة نهائياً ولا يمكن استرجاعها.")){
         state.rooms[ri].wins.forEach(function(w){dropPhotos(w.photos);});
         state.rooms.splice(ri,1);save();render();
       }
     }else if(b.hasAttribute("data-delwin")){
       var dw=+b.getAttribute("data-delwin");
-      dropPhotos(state.rooms[ri].wins[dw].photos);
-      state.rooms[ri].wins.splice(dw,1);save();render();
+      if(twoStep("هل تريد حذف هذه النافذة؟","سيتم حذف قياسات وصور هذه النافذة نهائياً ولا يمكن استرجاعها.")){
+        dropPhotos(state.rooms[ri].wins[dw].photos);
+        state.rooms[ri].wins.splice(dw,1);save();render();
+      }
     }else if(b.hasAttribute("data-addwin")){
       state.rooms[ri].wins.push(blankW());save();render();
       var ws=document.querySelectorAll('[data-ri="'+ri+'"] .w');ws[ws.length-1].scrollIntoView({behavior:"smooth"});
@@ -629,7 +634,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     state.head[k]=e.target.value;save();
   });
   document.getElementById("reset").addEventListener("click",function(){
-    if(!confirm("سيتم مسح كل بيانات وصور هذا الزبون من النموذج. هل أنت متأكد؟"))return;
+    if(!twoStep("هل تريد مسح بيانات هذا الزبون من النموذج؟","سيتم مسح كل بيانات وصور وقياسات هذا الزبون نهائياً ولا يمكن استرجاعها."))return;
     state.rooms.forEach(function(r){r.wins.forEach(function(w){dropPhotos(w.photos);});});
     state=normalize({id:state.id,head:{},rooms:[blankR()]});
     save();fill();render();renderStatus();
@@ -730,7 +735,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       if(dk!==lastDay){lastDay=dk;hdr='<div class="fday">'+esc(dk?dayLabel(dk):"بدون تاريخ")+'<small>'+dayCnt[dk]+' زبون</small></div>';}
       return hdr+'<section class="job"><div class="job-top"><h2>'+esc(j.head.name||"زبون بدون اسم")+'</h2><div class="tags">'+(j.saved?'<span class="tag">✔ محفوظ</span>':'<span class="tag draft">مسودة</span>')+(cur?'<span class="tag cur">مفتوح الآن</span>':'')+'</div></div>'+
         '<div class="job-meta">'+(j.head.phone?esc(j.head.phone)+' — ':'')+esc(j.head.date||"")+' — '+cnt(j.rooms.length,"غرفة واحدة","غرفتان","غرف","غرفة")+"، "+(section==="sofa"?cnt(countWins(j),"قطعة واحدة","قطعتان","قطع","قطعة"):cnt(countWins(j),"نافذة واحدة","نافذتان","نوافذ","نافذة"))+'</div>'+
-        (j.head.addr?'<div class="job-meta">'+esc(j.head.addr)+'</div>':'')+
+        (j.head.addr?'<div class="job-meta">'+esc(j.head.addr)+'</div>':'')+(section==="roller"&&j.head.install?'<div class="job-meta">📅 التسليم: '+esc(j.head.install)+'</div>':'')+
         '<div class="bar"><button type="button" class="primary" data-open="'+id+'">فتح</button><button type="button" class="del" data-deljob="'+id+'">حذف</button></div></section>';
     }).join("");
     document.getElementById("jobs").innerHTML=html||'<p class="sub">لا يوجد زبائن مطابقون. اضغط "+ زبون جديد" للبدء.</p>';
@@ -750,7 +755,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var id=b.getAttribute("data-open");
     if(id){state=store.jobs[id];save();showForm();push("form");return;}
     id=b.getAttribute("data-deljob");
-    if(id&&confirm("حذف هذا الزبون وكل قياساته وصوره؟ لا يمكن التراجع.")){
+    if(id&&twoStep("هل تريد حذف هذا الزبون؟","سيتم حذف الزبون وكل قياساته وصوره نهائياً ولا يمكن التراجع.")){
       store.jobs[id].rooms.forEach(function(r){r.wins.forEach(function(w){dropPhotos(w.photos);});});
       delete store.jobs[id];
       if(id===state.id){
@@ -764,6 +769,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   document.getElementById("goHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
   function fill(){
     document.querySelectorAll("[data-h]").forEach(function(el){el.value=state.head[el.getAttribute("data-h")]||"";});
+    var li=document.getElementById("lblInstall");if(li)li.textContent=(state.kind==="roller")?"موعد التسليم":"موعد التركيب المتفق عليه";
   }
 
   /* ---------- fabrics (sofa) window: by day ---------- */
@@ -817,7 +823,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var b=e.target.closest("button");if(!b)return;
     var id=+(b.getAttribute("data-fe")||0),did=+(b.getAttribute("data-fd")||0);
     if(id){var f=fabs.filter(function(x){return x.id===id;})[0];if(f){openFabForm(f);window.scrollTo(0,0);}}
-    else if(did&&confirm("حذف هذا الزبون؟ لا يمكن التراجع.")){fabs=fabs.filter(function(x){return x.id!==did;});fabPersist();renderFab();}
+    else if(did&&twoStep("هل تريد حذف هذا الزبون؟","سيتم حذف الزبون وبياناته نهائياً ولا يمكن التراجع.")){fabs=fabs.filter(function(x){return x.id!==did;});fabPersist();renderFab();}
   });
   document.getElementById("fabHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
 
@@ -857,7 +863,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function addDays(n){var d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
   function reminders(){
     var t0=addDays(0),t1=addDays(1),out=[];
-    Object.keys(store.jobs).forEach(function(id){var j=store.jobs[id];if((j.kind||"curtain")!=="curtain")return;var d=j.head.install;if(d===t0||d===t1)out.push({when:d===t0?"اليوم":"غداً",what:"ستائر",who:j.head.name||"زبون بدون اسم"});});
+    Object.keys(store.jobs).forEach(function(id){var j=store.jobs[id],kk=j.kind||"curtain";if(kk!=="curtain"&&kk!=="roller")return;var d=j.head.install;if(d===t0||d===t1)out.push({when:d===t0?"اليوم":"غداً",what:kk==="roller"?"ستائر رول":"ستائر",who:j.head.name||"زبون بدون اسم"});});
     fabs.forEach(function(f){if(f.del===t0||f.del===t1)out.push({when:f.del===t0?"اليوم":"غداً",what:"أقمشة",who:f.cust||f.name||"زبون بدون اسم"});});
     return out;
   }
