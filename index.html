@@ -149,6 +149,35 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
 .fgrid label{display:block;font-size:13px;margin-bottom:3px}
 .fgrid input{width:100%;box-sizing:border-box;padding:10px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit}
 .frem{font-weight:700}
+/* ---- laptop: split screen (customers beside the open customer) ---- */
+@media screen and (min-width:1000px){
+  body.split main{max-width:1320px;display:grid;grid-template-columns:360px minmax(0,1fr);column-gap:18px;align-items:start;padding-top:8px}
+  body.split main>.brand,body.split main>#toolbar{grid-column:1/-1}
+  body.split main>.brand img{height:64px}
+  body.split #listView{grid-column:1;grid-row:3;position:sticky;top:8px;max-height:calc(100vh - 16px);overflow-y:auto}
+  body.split #formView{grid-column:2;grid-row:3}
+  body.split #showList{display:none}
+}
+/* ---- 80 mm receipt ---- */
+.rcptbtn{display:none}
+@media (min-width:1000px){.rcptbtn{display:inline-block}}
+#rcpt{display:none;width:72mm;margin:0 auto;padding:2mm 0 8mm;color:#000;background:#fff;font-family:Tahoma,"Segoe UI","IBM Plex Sans Arabic",sans-serif;font-size:13px;line-height:1.45;direction:rtl}
+#rcpt .rc-head{text-align:center}
+#rcpt .rc-head img{height:15mm;max-width:100%;filter:grayscale(1) brightness(.65) contrast(2.2)}
+#rcpt .rc-s{font-size:11px}
+#rcpt .rc-title{text-align:center;font-weight:700;font-size:14px;margin:2px 0}
+#rcpt .rc-sep{border-top:1px dashed #000;margin:5px 0}
+#rcpt .rr{display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+#rcpt .rv{white-space:nowrap;font-weight:700}
+#rcpt .rb{font-size:15px;font-weight:700}
+#rcpt .ri{margin-bottom:3px}
+#rcpt .ri-s{font-size:11px;padding-inline-start:4px}
+#rcpt .rc-foot{text-align:center;font-weight:700;margin-top:4px}
+#rcpt .rc-small{text-align:center;font-size:10px}
+@media print{
+  body.rcpt-print>*{display:none!important}
+  body.rcpt-print>#rcpt{display:block!important}
+}
 </style>
 </head>
 <body>
@@ -241,6 +270,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   <div class="bar">
     <button class="primary" id="saveJob">💾 حفظ القياسات</button>
     <button class="primary" onclick="window.print()">طباعة / حفظ PDF</button>
+    <button type="button" class="rcptbtn" id="rcptJob">🧾 طباعة فاتورة (80 مم)</button>
     <button id="reset" class="del">مسح بيانات هذا الزبون</button>
   </div>
   </div>
@@ -251,6 +281,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     <div id="jobs"></div>
   </div>
 </main>
+<div id="rcpt" dir="rtl"></div>
 
 <script>
 (function(){
@@ -741,7 +772,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function renderList(){
     document.getElementById("secTitle").textContent=KINDS[section].t;
     var q=(document.getElementById("q").value||"").trim().toLowerCase();
-    var ids=Object.keys(store.jobs).sort(function(a,b){var da=store.jobs[a].head.date||"",db=store.jobs[b].head.date||"";return da<db?1:da>db?-1:store.jobs[b].updated-store.jobs[a].updated;});
+    var ids=Object.keys(store.jobs).sort(function(a,b){var da=store.jobs[a].head.date||"",db=store.jobs[b].head.date||"";return da<db?1:da>db?-1:store.jobs[b].updated-store.jobs[a].updated;}).filter(function(id){return !(document.body.classList.contains("split")&&isEmpty(store.jobs[id]));});
     var lastDay=null,dayCnt={};
     ids.forEach(function(id){var j=store.jobs[id];if((j.kind||"curtain")!==section)return;if(q&&((j.head.name||"")+" "+(j.head.phone||"")).toLowerCase().indexOf(q)<0)return;var d=j.head.date||"";dayCnt[d]=(dayCnt[d]||0)+1;});
     var html=ids.filter(function(id){
@@ -778,7 +809,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         if(Object.keys(store.jobs).length)state=store.jobs[latestId()];
         else{state=newJob();store.jobs[state.id]=state;}
       }
-      store.cur=state.id;persist();renderList();updateTool();
+      store.cur=state.id;persist();renderList();updateTool();syncForm();
     });
   });
   homeView.addEventListener("click",function(e){var b=e.target.closest("[data-sec]");if(b)enterSection(b.getAttribute("data-sec"));});
@@ -811,7 +842,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         h+='<section class="job"><div class="job-top"><h2>'+esc(f.cust||"زبون بدون اسم")+'</h2></div>'+
           '<div class="job-meta">'+(f.phone?esc(f.phone)+' — ':'')+(itemsOf(f).length>1?'</div>'+itemsOf(f).map(function(x){return '<div class="job-meta">• '+esc(x.name||"مادة")+(x.num?' — رقم '+esc(x.num):'')+(x.meters?' — '+fmoney(fnum(x.meters))+' م':'')+(x.price?' × '+fmoney(fnum(x.price)):'')+'</div>';}).join(""):esc(f.name||"")+(f.num?' — رقم '+esc(f.num):'')+(f.meters?' — '+fmoney(fnum(f.meters))+' م':'')+'</div>')+
           '<div class="job-meta">الفاتورة: '+fmoney(fnum(f.inv))+(fnum(f.disc)?' — الحسم: '+fmoney(fnum(f.disc))+' — الصافي: '+fmoney(fnet(f)):'')+(f.price?' ('+fmoney(fnum(f.price))+' للمتر)':'')+' — الدفعة: '+fmoney(fnum(f.paid))+(fnum(f.paid2)?' + '+fmoney(fnum(f.paid2))+(f.paid2d?' ('+esc(f.paid2d)+')':''):'')+' — <span class="frem">المتبقي: '+fmoney(fnet(f)-fnum(f.paid)-fnum(f.paid2))+'</span></div>'+(f.del?'<div class="job-meta">📅 التسليم: '+esc(f.del)+'</div>':'')+
-          '<div class="bar"><button type="button" class="primary" data-fe="'+f.id+'">تعديل</button><button type="button" class="del" data-fd="'+f.id+'">حذف</button></div></section>';
+          '<div class="bar"><button type="button" class="primary" data-fe="'+f.id+'">تعديل</button><button type="button" class="rcptbtn" data-fp="'+f.id+'">🧾 فاتورة 80 مم</button><button type="button" class="del" data-fd="'+f.id+'">حذف</button></div></section>';
       });
     });
     document.getElementById("fabList").innerHTML=h||'<p class="sub">لا يوجد زبائن. اضغط "+ زبون جديد" للبدء.</p>';
@@ -837,7 +868,8 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   document.getElementById("fabQ").addEventListener("input",renderFab);
   document.getElementById("fabList").addEventListener("click",function(e){
     var b=e.target.closest("button");if(!b)return;
-    var id=+(b.getAttribute("data-fe")||0),did=+(b.getAttribute("data-fd")||0);
+    var id=+(b.getAttribute("data-fe")||0),did=+(b.getAttribute("data-fd")||0),fpid=+(b.getAttribute("data-fp")||0);
+    if(fpid){var pf=fabs.filter(function(x){return x.id===fpid;})[0];if(pf)printReceipt(fabReceipt(pf));return;}
     if(id){var f=fabs.filter(function(x){return x.id===id;})[0];if(f){openFabForm(f);window.scrollTo(0,0);}}
     else if(did)twoStep("هل تريد حذف هذا الزبون؟","سيتم حذف الزبون وبياناته نهائياً ولا يمكن التراجع.",function(){fabs=fabs.filter(function(x){return x.id!==did;});fabPersist();renderFab();});
   });
@@ -1000,6 +1032,120 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       }catch(e){}
     }
   };
+  /* ---------- laptop: split screen ---------- */
+  var shownId=null,wideMQ=window.matchMedia?window.matchMedia("(min-width: 1000px)"):null;
+  function isWide(){return !!(wideMQ&&wideMQ.matches);}
+  function isSplit(){return document.body.classList.contains("split");}
+  function syncForm(){
+    if(!isSplit())return;
+    if(shownId!==state.id){fill();render();renderStatus();shownId=state.id;}
+  }
+  function applySplit(){
+    var inJob=homeView.hidden&&fabView.hidden;
+    if(inJob&&isWide()){
+      document.body.classList.add("split");
+      ensureKind();
+      listView.hidden=false;formView.hidden=false;
+      renderList();syncForm();
+    }else if(isSplit()){
+      document.body.classList.remove("split");
+      if(inJob){listView.hidden=true;formView.hidden=false;updateTool();}
+    }
+  }
+  var _sl=showList,_sf=showForm,_sh=showHome,_sfab=showFab;
+  showList=function(){_sl();applySplit();};
+  showForm=function(){_sf();shownId=state.id;applySplit();};
+  showHome=function(){_sh();applySplit();};
+  showFab=function(){_sfab();applySplit();};
+  if(wideMQ){var onWide=function(){applySplit();};if(wideMQ.addEventListener)wideMQ.addEventListener("change",onWide);else if(wideMQ.addListener)wideMQ.addListener(onWide);}
+  var listTimer=null;
+  function softList(){if(!isSplit())return;clearTimeout(listTimer);listTimer=setTimeout(function(){if(isSplit())renderList();},250);}
+  formView.addEventListener("input",softList);
+  formView.addEventListener("click",softList);
+
+  /* ---------- 80 mm receipt ---------- */
+  function rn(x){return parseFloat(x)||0;}
+  function ltr(s){return '<bdi dir="ltr">'+esc(s)+'</bdi>';}
+  function rRow(a,b,cls){return '<div class="rr'+(cls?' '+cls:'')+'"><span>'+a+'</span><span class="rv">'+b+'</span></div>';}
+  function receiptHtml(o){
+    var h='<div class="rc-head"><img id="rcLogo" alt=""><div class="rc-s">أقمشة الستائر والمفروشات</div></div><div class="rc-sep"></div>';
+    h+='<div class="rc-title">فاتورة — '+esc(o.kind)+'</div>';
+    h+=rRow("الزبون",esc(o.name||"-"));
+    if(o.phone)h+=rRow("الهاتف",ltr(o.phone));
+    if(o.addr)h+=rRow("العنوان",esc(o.addr));
+    h+=rRow("التاريخ",ltr(o.date||""));
+    h+='<div class="rc-sep"></div>';
+    o.items.forEach(function(it){
+      h+='<div class="ri">'+rRow(esc(it.t),it.v?ltr(it.v):"")+(it.s?'<div class="ri-s">'+esc(it.s)+'</div>':'')+'</div>';
+    });
+    h+='<div class="rc-sep"></div>';
+    o.tot.forEach(function(x){h+=rRow(esc(x[0]),ltr(x[1]),x[2]);});
+    if(o.note&&o.note[1])h+=rRow(esc(o.note[0]),ltr(o.note[1]));
+    h+='<div class="rc-sep"></div><div class="rc-foot">شكراً لاختياركم خشفة</div><div class="rc-small">'+ltr(fmtTime(Date.now()))+'</div>';
+    return h;
+  }
+  var rcToken=0;
+  function printReceipt(o){
+    var rc=document.getElementById("rcpt"),tok=++rcToken;
+    rc.innerHTML=receiptHtml(o);
+    var im=rc.querySelector("#rcLogo"),lg=document.querySelector(".logo-light");
+    var st=document.createElement("style");st.id="rcptPage";st.textContent="@page{size:80mm auto;margin:0}";
+    document.head.appendChild(st);
+    document.body.classList.add("rcpt-print");
+    function cleanup(){
+      window.removeEventListener("afterprint",cleanup);
+      if(tok!==rcToken)return;
+      document.body.classList.remove("rcpt-print");
+      if(st.parentNode)st.parentNode.removeChild(st);
+      rc.innerHTML="";
+    }
+    window.addEventListener("afterprint",cleanup);
+    var fired=false;
+    function go(){
+      if(fired)return;fired=true;
+      setTimeout(function(){window.print();setTimeout(cleanup,10000);},80);
+    }
+    if(im&&lg&&lg.src){im.onload=go;im.onerror=go;im.src=lg.src;if(im.complete)go();setTimeout(go,900);}
+    else go();
+  }
+  function jobReceipt(){
+    var j=state,kd=j.kind||"curtain",items=[],total=0;
+    j.rooms.forEach(function(r,ri){
+      var rm=r.name||("الغرفة "+(ri+1));
+      if(kd==="curtain"){
+        var c=priceCalc(r);
+        if(c.total>0){total+=c.total;items.push({t:rm,s:"عدد النوافذ: "+r.wins.length+" — القماش: "+roomFabric(r)+" م",v:money(c.total)});}
+      }else if(kd==="roller"){
+        r.wins.forEach(function(w,wi){
+          var v=rollTot(w);
+          if(v>0){total+=v;items.push({t:rm+" - نافذة "+(wi+1),s:(w.rt||"رول")+" — "+fabricOf(w)+" م² × "+money(rn(w.pm))+(rn(w.ins)?" + تركيب "+money(rn(w.ins)):""),v:money(v)});}
+        });
+      }
+    });
+    if(!items.length){
+      alert(kd==="roller"?"لا توجد قيمة محسوبة بعد. أدخل سعر المتر للنوافذ أولاً.":"لا توجد قيمة محسوبة بعد. اضغط «حساب القيمة» في الغرفة وأدخل الأسعار أولاً.");
+      return null;
+    }
+    var d1=rn(j.head.deposit),d2=rn(j.head.deposit2),tot=[["الإجمالي",money(total),"rb"]];
+    if(d1)tot.push(["العربون",money(d1)]);
+    if(d2)tot.push(["الدفعة الثانية"+(j.head.deposit2date?" ("+j.head.deposit2date+")":""),money(d2)]);
+    if(d1||d2)tot.push(["المتبقي",money(total-d1-d2),"rb"]);
+    return {kind:KINDS[kd].t,name:j.head.name,phone:j.head.phone,addr:j.head.addr,date:j.head.date,items:items,tot:tot,note:[kd==="roller"?"موعد التسليم":"موعد التركيب",j.head.install]};
+  }
+  function fabReceipt(f){
+    var items=itemsOf(f).map(function(x){
+      var v=itemVal(x);
+      return {t:(x.name||"مادة")+(x.num?" (رقم "+x.num+")":""),s:fmoney(fnum(x.meters))+" م"+(fnum(x.price)?" × "+fmoney(fnum(x.price)):""),v:v?fmoney(v):""};
+    });
+    var net=fnet(f),p1=fnum(f.paid),p2=fnum(f.paid2),tot=[["قيمة الفاتورة",fmoney(fnum(f.inv)),fnum(f.disc)?"":"rb"]];
+    if(fnum(f.disc)){tot.push(["الحسم",fmoney(fnum(f.disc))]);tot.push(["الصافي",fmoney(net),"rb"]);}
+    if(p1)tot.push(["الدفعة",fmoney(p1)]);
+    if(p2)tot.push(["الدفعة الثانية"+(f.paid2d?" ("+f.paid2d+")":""),fmoney(p2)]);
+    tot.push(["المتبقي",fmoney(net-p1-p2),"rb"]);
+    return {kind:"أقمشة كنب",name:f.cust,phone:f.phone,addr:"",date:f.date,items:items,tot:tot,note:["موعد التسليم",f.del]};
+  }
+  document.getElementById("rcptJob").addEventListener("click",function(){var o=jobReceipt();if(o)printReceipt(o);});
+
   bkInfo();
   load();fill();render();renderStatus();updateTool();history.replaceState({v:"home",sec:section,d:0},"");showHome();
 })();
