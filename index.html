@@ -687,7 +687,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function doThanks(n,p){
     var c=needNamePhone(n,p);if(!c)return;
-    var msg="مرحباً "+c.name+"، شكراً لاختياركم خشفة لأقمشة الستائر والمفروشات. سعدنا بخدمتكم ونتمنى أن ينال العمل رضاكم. وإن احتجتم أي شيء نحن بالخدمة.";
+    var msg="مرحباً سيد / ة "+c.name+"، شكراً لاختياركم خشفة لأقمشة الستائر والمفروشات. سعدنا بخدمتكم ونتمنى أن ينال العمل رضاكم. وإن احتجتم أي شيء نحن بالخدمة.";
     window.open("https://wa.me/"+c.phone+"?text="+encodeURIComponent(msg),"_blank");
   }
   document.getElementById("saveContact").addEventListener("click",function(){doContact(state.head.name,state.head.phone);});
