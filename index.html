@@ -1068,7 +1068,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function ltr(s){return '<bdi dir="ltr">'+esc(s)+'</bdi>';}
   function rRow(a,b,cls){return '<div class="rr'+(cls?' '+cls:'')+'"><span>'+a+'</span><span class="rv">'+b+'</span></div>';}
   function receiptHtml(o){
-    var h='<div class="rc-head"><img id="rcLogo" alt=""><div class="rc-s">أقمشة الستائر والمفروشات</div></div><div class="rc-sep"></div>';
+    var h='<div class="rc-head"><img id="rcLogo" alt=""><div class="rc-s">ستائر وأقمشة مفروشات</div></div><div class="rc-sep"></div>';
     h+='<div class="rc-title">فاتورة — '+esc(o.kind)+'</div>';
     h+=rRow("الزبون",esc(o.name||"-"));
     if(o.phone)h+=rRow("الهاتف",ltr(o.phone));
