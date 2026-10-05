@@ -847,7 +847,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         h+='<section class="job"><div class="job-top"><h2>'+esc(f.cust||"زبون بدون اسم")+'</h2></div>'+
           '<div class="job-meta">'+(f.phone?esc(f.phone)+' — ':'')+(itemsOf(f).length>1?'</div>'+itemsOf(f).map(function(x){return '<div class="job-meta">• '+esc(x.name||"مادة")+(x.num?' — رقم '+esc(x.num):'')+(x.meters?' — '+fmoney(fnum(x.meters))+' م':'')+(x.price?' × '+fmoney(fnum(x.price)):'')+'</div>';}).join(""):esc(f.name||"")+(f.num?' — رقم '+esc(f.num):'')+(f.meters?' — '+fmoney(fnum(f.meters))+' م':'')+'</div>')+
           '<div class="job-meta">الفاتورة: '+fmoney(fnum(f.inv))+(fnum(f.disc)?' — الحسم: '+fmoney(fnum(f.disc))+' — الصافي: '+fmoney(fnet(f)):'')+(f.price?' ('+fmoney(fnum(f.price))+' للمتر)':'')+' — الدفعة: '+fmoney(fnum(f.paid))+(fnum(f.paid2)?' + '+fmoney(fnum(f.paid2))+(f.paid2d?' ('+esc(f.paid2d)+')':''):'')+' — <span class="frem">المتبقي: '+fmoney(fnet(f)-fnum(f.paid)-fnum(f.paid2))+'</span></div>'+(f.del?'<div class="job-meta">📅 التسليم: '+esc(f.del)+'</div>':'')+
-          '<div class="bar"><button type="button" class="primary" data-fe="'+f.id+'">تعديل</button><button type="button" class="rcptbtn" data-fp="'+f.id+'">🧾 فاتورة 80 مم</button><button type="button" class="phonebtn" data-fs="'+f.id+'">🖨 إرسال للطباعة على اللابتوب</button><button type="button" class="del" data-fd="'+f.id+'">حذف</button></div></section>';
+          '<div class="bar"><button type="button" class="primary" data-fe="'+f.id+'">تعديل</button><button type="button" class="rcptbtn" data-fp="'+f.id+'">🧾 فاتورة 80 مم</button><button type="button" class="phonebtn" data-fs="'+f.id+'">🖨 إرسال للطباعة على اللابتوب</button><button type="button" class="rcptbtn" data-fq="'+f.id+'">📋 بيان بدون أسعار</button><button type="button" class="phonebtn" data-fr="'+f.id+'">📋 إرسال بيان بدون أسعار للابتوب</button><button type="button" class="del" data-fd="'+f.id+'">حذف</button></div></section>';
       });
     });
     document.getElementById("fabList").innerHTML=h||'<p class="sub">لا يوجد زبائن. اضغط "+ زبون جديد" للبدء.</p>';
@@ -873,7 +873,9 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   document.getElementById("fabQ").addEventListener("input",renderFab);
   document.getElementById("fabList").addEventListener("click",function(e){
     var b=e.target.closest("button");if(!b)return;
-    var id=+(b.getAttribute("data-fe")||0),did=+(b.getAttribute("data-fd")||0),fpid=+(b.getAttribute("data-fp")||0),fsid=+(b.getAttribute("data-fs")||0);
+    var id=+(b.getAttribute("data-fe")||0),did=+(b.getAttribute("data-fd")||0),fpid=+(b.getAttribute("data-fp")||0),fsid=+(b.getAttribute("data-fs")||0),fqid=+(b.getAttribute("data-fq")||0),frid=+(b.getAttribute("data-fr")||0);
+    if(frid){var rf=fabs.filter(function(x){return x.id===frid;})[0];if(rf)sendToLaptop(fabSlip(rf));return;}
+    if(fqid){var qf=fabs.filter(function(x){return x.id===fqid;})[0];if(qf)printReceipt(fabSlip(qf));return;}
     if(fsid){var sf=fabs.filter(function(x){return x.id===fsid;})[0];if(sf)sendToLaptop(fabReceipt(sf));return;}
     if(fpid){var pf=fabs.filter(function(x){return x.id===fpid;})[0];if(pf)printReceipt(fabReceipt(pf));return;}
     if(id){var f=fabs.filter(function(x){return x.id===id;})[0];if(f){openFabForm(f);window.scrollTo(0,0);}}
@@ -1077,7 +1079,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function rRow(a,b,cls){return '<div class="rr'+(cls?' '+cls:'')+'"><span>'+a+'</span><span class="rv">'+b+'</span></div>';}
   function receiptHtml(o){
     var h='<div class="rc-head"><img id="rcLogo" alt=""><div class="rc-s">ستائر وأقمشة مفروشات</div></div><div class="rc-sep"></div>';
-    h+='<div class="rc-title">فاتورة — '+esc(o.kind)+'</div>';
+    h+='<div class="rc-title">'+esc(o.title||"فاتورة")+' — '+esc(o.kind)+'</div>';
     h+=rRow("الزبون",esc(o.name||"-"));
     if(o.phone)h+=rRow("الهاتف",ltr(o.phone));
     if(o.addr)h+=rRow("العنوان",esc(o.addr));
@@ -1151,6 +1153,10 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     if(p2)tot.push(["الدفعة الثانية"+(f.paid2d?" ("+f.paid2d+")":""),fmoney(p2)]);
     tot.push(["المتبقي",fmoney(net-p1-p2),"rb"]);
     return {kind:"أقمشة كنب",name:f.cust,phone:f.phone,addr:"",date:f.date,items:items,tot:tot,note:["موعد التسليم",f.del]};
+  }
+  function fabSlip(f){
+    var tm=0,items=itemsOf(f).map(function(x){tm+=fnum(x.meters);return {t:(x.name||"مادة")+(x.num?" (رقم "+x.num+")":""),v:x.meters?fmoney(fnum(x.meters))+" م":""};});
+    return {title:"بيان مواد",kind:"أقمشة كنب",name:f.cust,phone:"",addr:"",date:f.date,items:items,tot:[["مجموع الأمتار",fmoney(tm)+" م","rb"]],note:null};
   }
   /* ---------- send receipt from phone to the laptop printer (through the existing sync) ---------- */
   function sendToLaptop(o){
