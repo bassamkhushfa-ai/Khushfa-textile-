@@ -1086,7 +1086,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     h+=rRow("التاريخ",ltr(o.date||""));
     h+='<div class="rc-sep"></div>';
     o.items.forEach(function(it){
-      h+='<div class="ri">'+rRow(esc(it.t),it.v?ltr(it.v):"")+(it.s?'<div class="ri-s">'+esc(it.s)+'</div>':'')+'</div>';
+      h+='<div class="ri">'+rRow(esc(it.t),it.v?ltr(it.v):"")+(it.s?'<div class="ri-s">'+esc(it.s)+'</div>':'')+(it.m||[]).map(function(m){return '<div class="ri-s">'+ltr(m)+'</div>';}).join("")+'</div>';
     });
     h+='<div class="rc-sep"></div>';
     o.tot.forEach(function(x){h+=rRow(esc(x[0]),ltr(x[1]),x[2]);});
@@ -1128,7 +1128,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       }else if(kd==="roller"){
         r.wins.forEach(function(w,wi){
           var v=rollTot(w);
-          if(v>0){total+=v;items.push({t:rm+" - نافذة "+(wi+1),s:(w.rt||"رول")+" — "+fabricOf(w)+" م² × "+money(rn(w.pm))+(rn(w.ins)?" + تركيب "+money(rn(w.ins)):""),v:money(v)});}
+          if(v>0){total+=v;var ms=[],pn=pcN(w)||1;for(var pi=1;pi<=pn;pi++){var px=pi===1?"":String(pi),pw=w["w"+px],ph=w["h"+px];if(pw||ph)ms.push((pn>1?"قطعة "+pi+": ":"")+"عرض "+(pw||"-")+" × طول "+(ph||"-")+" سم");}items.push({t:rm+" - نافذة "+(wi+1),s:(w.rt||"رول")+" — "+fabricOf(w)+" م² × "+money(rn(w.pm))+(rn(w.ins)?" + تركيب "+money(rn(w.ins)):""),m:ms,v:money(v)});}
         });
       }
     });
