@@ -386,7 +386,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function blankW(){var o={w:"",h:"",hb:HB[0],hd:"",type:CURTAIN[0],lining:false,velvet:false,mount:MOUNT[0],model:MODELS[0],full:"2",fabric:"",photos:[],note:"",rt:ROLL[0],ctrl:CTRL[0],color:"",meters:"",dim:"",item:"",lm:"",pc:PC[0],w2:"",h2:"",sd:SIDES[0],sd2:SIDES[1],pm:"",ins:"",lay:LAY[0],chm:"",vlm:"",pcn:"",rl1:"",rp1:"",rl2:"",rp2:"",rl3:"",rp3:""};for(var i=3;i<=10;i++){o["w"+i]="";o["h"+i]="";o["sd"+i]=i%2?SIDES[0]:SIDES[1];}return o;}
   function pcN(w){var n=parseInt(w.pcn,10);if(!(n>0))return 0;return Math.min(n,100);}
   function morePieces(w){for(var i=2;i<=100;i++){if(w["w"+i]||w["h"+i])return true;}return false;}
-  function blankP(){return{fab:"",chf:"",vel:"",lin:"",rod:"",tail:"1.5",ltail:"",inst:"5",bases:"",basev:"",ring:""};}
+  function blankP(){return{fab:"",chf:"",vel:"",lin:"",rod:"",tail:"",ltail:"",inst:"",bases:"",basev:"",ring:""};}
   function blankR(){return{name:"",wins:[blankW()],price:blankP()};}
   var KEY2="khushfa-jobs-v1";
   var store={cur:null,jobs:{}};
