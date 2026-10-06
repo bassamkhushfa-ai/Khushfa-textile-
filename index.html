@@ -260,6 +260,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       <div class="full"><label>العنوان</label><input data-h="addr"></div>
       <div><label>تاريخ القياس</label><input data-h="date" type="date"></div>
       <div><label>اسم القائم بالقياس</label><input data-h="by"></div>
+      <div class="full" id="curRow" hidden><label>عملة الحساب (ستائر القماش)</label><select id="curSel"><option value="usd">دولار ($)</option><option value="syp">ليرة سورية (ل.س)</option></select><small id="curNote" style="display:block;color:var(--mute);margin-top:4px"></small></div>
     </div>
     <div class="bar noprint" style="margin-top:10px">
       <button type="button" id="saveContact">📇 حفظ في جهات الاتصال</button>
@@ -279,7 +280,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     <div class="grid" style="margin-top:10px" id="foot">
       <div class="full"><label>ملاحظات عامة</label><textarea data-h="notes"></textarea></div>
       <div><label id="lblInstall">موعد التركيب المتفق عليه</label><input data-h="install" type="date"></div>
-      <div><label>الحسم ($)</label><input data-h="disc" inputmode="decimal"></div>
+      <div><label id="lblDisc">الحسم ($)</label><input data-h="disc" inputmode="decimal"></div>
       <div><label>العربون المدفوع</label><input data-h="deposit" inputmode="decimal"></div>
       <div><label>الدفعة الثانية</label><input data-h="deposit2" inputmode="decimal"></div>
       <div><label>تاريخ الدفعة الثانية</label><input data-h="deposit2date" type="date"></div>
@@ -472,7 +473,10 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     });
   }
   var priceOpen={};
-  function money(x){return "$"+(Math.round(x*100)/100);}
+  function curOf(){return (state&&(state.kind||"curtain")==="curtain"&&state.head&&state.head.cur==="syp")?"syp":"usd";}
+  function curSym(){return curOf()==="syp"?"ل.س":"$";}
+  function moneyC(x,c){x=+x||0;if(c==="syp")return Math.round(x).toLocaleString("en-US")+" ل.س";return "$"+(Math.round(x*100)/100);}
+  function money(x){return moneyC(x,curOf());}
   function roundRod(m){if(!(m>0))return 0;if(m>2&&m<=2.5)return 2.5;return Math.ceil(m-1e-9);}
   function rodRows(m){
     var ks=Object.keys(m),out=[];
@@ -515,7 +519,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var h='';
     r.wins.forEach(function(w,wi){
       var L=Math.max(1,LAY.indexOf(w.lay)+1),x='';
-      for(var i=1;i<=L;i++){x+=(L>1?'<div class="full"><b>السيخ '+i+'</b></div>':'')+'<div class="unit"><label>طول السيخ'+(L>1?' '+i:'')+'</label><input data-pw="'+wi+'" data-pk="rl'+i+'" data-pr inputmode="decimal" value="'+esc(w["rl"+i])+'"><span>م</span></div><div class="unit"><label>سعر المتر</label><input data-pw="'+wi+'" data-pk="rp'+i+'" data-pr inputmode="decimal" value="'+esc(w["rp"+i])+'"><span>$</span></div>';}
+      for(var i=1;i<=L;i++){x+=(L>1?'<div class="full"><b>السيخ '+i+'</b></div>':'')+'<div class="unit"><label>طول السيخ'+(L>1?' '+i:'')+'</label><input data-pw="'+wi+'" data-pk="rl'+i+'" data-pr inputmode="decimal" value="'+esc(w["rl"+i])+'"><span>م</span></div><div class="unit"><label>سعر المتر</label><input data-pw="'+wi+'" data-pk="rp'+i+'" data-pr inputmode="decimal" value="'+esc(w["rp"+i])+'"><span>'+curSym()+'</span></div>';}
       if(w.model===MODELS[1])x+='<div class="unit"><label>عدد الحلقات ('+RINGS_PER_M+' لكل متر قماش)</label><input data-prg="'+wi+'" data-pr readonly value="'+ringsOf(w)+'"></div>';
       h+='<div class="grid" style="margin-top:10px"><div class="full"><b>النافذة '+(wi+1)+'</b></div>'+x+'</div>';
     });
@@ -525,8 +529,8 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var P=r.price||blankP();
     function f(k,l){return '<div><label>'+l+'</label><input data-p="'+k+'" inputmode="decimal" value="'+esc(P[k])+'"></div>';}
     return '<div class="pricebox noprint"'+(priceOpen[ri]?'':' hidden')+'><h3>💰 قيمة البرداية — الغرفة '+(ri+1)+'</h3><div class="grid">'+
-      f("fab","سعر القماش للمتر ($)")+f("chf","سعر الشيفون للمتر ($)")+f("vel","سعر المخمل للمتر ($)")+f("tail","أجور الخياط للمتر ($)")+f("lin","سعر البطانة للمتر ($)")+f("ltail","أجور خياطة البطانة للمتر ($)")+
-      f("inst","أجور التركيب للنافذة ($)")+f("ring","سعر الحلقة الواحدة ($)")+f("bases","عدد القواعد")+f("basev","قيمة القاعدة الواحدة ($)")+
+      f("fab","سعر القماش للمتر ("+curSym()+")")+f("chf","سعر الشيفون للمتر ("+curSym()+")")+f("vel","سعر المخمل للمتر ("+curSym()+")")+f("tail","أجور الخياط للمتر ("+curSym()+")")+f("lin","سعر البطانة للمتر ("+curSym()+")")+f("ltail","أجور خياطة البطانة للمتر ("+curSym()+")")+
+      f("inst","أجور التركيب للنافذة ("+curSym()+")")+f("ring","سعر الحلقة الواحدة ("+curSym()+")")+f("bases","عدد القواعد")+f("basev","قيمة القاعدة الواحدة ("+curSym()+")")+
       '</div>'+winPriceHtml(r)+'<div class="calc" data-pres>'+priceHtml(r)+'</div><div class="bar" style="margin-top:10px"><button type="button" class="primary" data-pprint="1">🖨 طباعة حساب القيمة</button><button type="button" class="phonebtn" data-psend="1">📤 إرسال للابتوب للطباعة</button></div></div>';
   }
 
@@ -535,7 +539,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var c=priceCalc(r),rows=c.rows.filter(function(x){return x[1]>0||x[4]>0;});
     if(!rows.length){alert("لا توجد قيمة محسوبة بعد. أدخل القياسات والأسعار أولاً.");return null;}
     var hd=(state&&state.head)||{};
-    return {pc:1,kind:"حساب قيمة الستائر",name:hd.name||"",phone:hd.phone||"",date:hd.date||today(),room:r.name||("الغرفة "+(ri+1)),rows:rows,total:c.total};
+    return {pc:1,cur:curOf(),kind:"حساب قيمة الستائر",name:hd.name||"",phone:hd.phone||"",date:hd.date||today(),room:r.name||("الغرفة "+(ri+1)),rows:rows,total:c.total};
   }
   function printPcalcData(d){
     var lg=document.querySelector(".logo-light");
@@ -544,9 +548,9 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     h+='<div class="pc-info"><span>الزبون: <b>'+esc(d.name||"-")+'</b></span>'+(d.phone?'<span>الهاتف: <b dir="ltr">'+esc(d.phone)+'</b></span>':'')+'<span>'+esc(d.room)+'</span><span>التاريخ: <b dir="ltr">'+esc(d.date)+'</b></span></div>';
     h+='<table class="pc-t"><tr><th>البند</th><th>الكمية</th><th>السعر</th><th>المبلغ</th></tr>';
     d.rows.forEach(function(x){
-      h+='<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+' '+esc(x[3])+'</td><td>'+(x[5]?'—':money(x[2]))+'</td><td>'+money(x[4])+'</td></tr>';
+      h+='<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+' '+esc(x[3])+'</td><td>'+(x[5]?'—':moneyC(x[2],d.cur))+'</td><td>'+moneyC(x[4],d.cur)+'</td></tr>';
     });
-    h+='</table><div class="pc-tot">الإجمالي: <b>'+money(d.total)+'</b></div><div class="pc-foot">شكراً لاختياركم خشفة</div>';
+    h+='</table><div class="pc-tot">الإجمالي: <b>'+moneyC(d.total,d.cur)+'</b></div><div class="pc-foot">شكراً لاختياركم خشفة</div>';
     var box=document.getElementById("pcalc");box.innerHTML=h;
     var st=document.createElement("style");st.textContent="@page{size:80mm auto;margin:0}";document.head.appendChild(st);
     document.body.classList.add("pc-print");
@@ -584,7 +588,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       '<input class="hid" type="file" accept="image/*" capture="environment" data-file="cam">'+
       '<input class="hid" type="file" accept="image/*" multiple data-file="gal">'+
       '<div class="photos">'+photosHtml(w)+'</div></div>';}
-    function rodsHtml(){var L=Math.max(1,LAY.indexOf(w.lay)+1),h="";for(var i=1;i<=L;i++){h+=(L>1?'<div class="full"><b>السيخ '+i+'</b></div>':'')+'<div class="unit"><label>طول السيخ'+(L>1?' '+i:'')+'</label><input data-k="rl'+i+'" data-pr inputmode="decimal" value="'+esc(w["rl"+i])+'"><span>م</span></div><div class="unit"><label>سعر المتر</label><input data-k="rp'+i+'" data-pr inputmode="decimal" value="'+esc(w["rp"+i])+'"><span>$</span></div>';}return h;}
+    function rodsHtml(){var L=Math.max(1,LAY.indexOf(w.lay)+1),h="";for(var i=1;i<=L;i++){h+=(L>1?'<div class="full"><b>السيخ '+i+'</b></div>':'')+'<div class="unit"><label>طول السيخ'+(L>1?' '+i:'')+'</label><input data-k="rl'+i+'" data-pr inputmode="decimal" value="'+esc(w["rl"+i])+'"><span>م</span></div><div class="unit"><label>سعر المتر</label><input data-k="rp'+i+'" data-pr inputmode="decimal" value="'+esc(w["rp"+i])+'"><span>'+curSym()+'</span></div>';}return h;}
     var mid;
     if(kd==="roller"){
       var cnt=pcN(w),two=cnt>1;
@@ -903,8 +907,31 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   });
   homeView.addEventListener("click",function(e){var b=e.target.closest("[data-sec]");if(b)enterSection(b.getAttribute("data-sec"));});
   document.getElementById("goHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
+  function updCur(){
+    var row=document.getElementById("curRow"),sel=document.getElementById("curSel");if(!row||!sel)return;
+    var isC=(state.kind||"curtain")==="curtain";row.hidden=!isC;
+    sel.value=state.head.cur==="syp"?"syp":"usd";
+    var nt=document.getElementById("curNote");if(nt)nt.textContent=(isC&&state.head.cur==="syp"&&state.head.rate)?("سعر الصرف المعتمد: 1$ = "+Number(state.head.rate).toLocaleString("en-US")+" ل.س"):"";
+    var ld=document.getElementById("lblDisc");if(ld)ld.textContent="الحسم ("+curSym()+")";
+  }
+  function arNum(v){return parseFloat(String(v||"").replace(/[٠-٩]/g,function(d){return d.charCodeAt(0)-1632;}).replace(/[٬,\s]/g,"").replace("٫","."));}
+  document.getElementById("curSel").addEventListener("change",function(e){
+    var to=e.target.value,from=curOf();if(to===from)return;
+    var msg=to==="syp"?"التحويل إلى الليرة السورية.\nأدخل سعر الصرف: كم ليرة سورية = 1 دولار؟\n(سيتم تحويل كل الأسعار المدخلة تلقائياً)":"التحويل إلى الدولار.\nأدخل سعر الصرف: كم ليرة سورية = 1 دولار؟\n(سيتم تحويل كل الأسعار المدخلة تلقائياً)";
+    var rate=arNum(window.prompt(msg,state.head.rate||""));
+    if(!(rate>0)){e.target.value=from;return;}
+    function conv(v){if(v===""||v==null)return v;var n=parseFloat(v);if(!isFinite(n))return v;n=to==="syp"?Math.round(n*rate):Math.round(n/rate*100)/100;return String(n);}
+    state.rooms.forEach(function(r){
+      ["fab","chf","vel","lin","ltail","tail","inst","ring","basev"].forEach(function(k){if(r.price)r.price[k]=conv(r.price[k]);});
+      r.wins.forEach(function(w){["rp1","rp2","rp3"].forEach(function(k){w[k]=conv(w[k]);});});
+    });
+    ["disc","deposit","deposit2"].forEach(function(k){state.head[k]=conv(state.head[k]);});
+    state.head.cur=to;state.head.rate=String(rate);
+    save();fill();render();renderStatus();
+  });
   function fill(){
     document.querySelectorAll("[data-h]").forEach(function(el){el.value=state.head[el.getAttribute("data-h")]||"";});
+    updCur();
     var li=document.getElementById("lblInstall");if(li)li.textContent=(state.kind==="roller")?"موعد التسليم":"موعد التركيب المتفق عليه";
   }
 
