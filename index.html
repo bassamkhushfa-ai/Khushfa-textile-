@@ -182,6 +182,21 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   body.rcpt-print>*{display:none!important}
   body.rcpt-print>#rcpt{display:block!important}
 }
+/* ---- print price calculation ---- */
+#pcalc{display:none;color:#000;background:#fff;font-family:Tahoma,"Segoe UI","IBM Plex Sans Arabic",sans-serif;font-size:14px;line-height:1.5;direction:rtl;padding:10mm}
+#pcalc .pc-head{text-align:center}
+#pcalc .pc-head img{height:28mm;max-width:100%;filter:grayscale(1) brightness(.65) contrast(2.2)}
+#pcalc .pc-title{text-align:center;margin:6px 0 10px;font-size:20px}
+#pcalc .pc-info{display:flex;flex-wrap:wrap;gap:6px 22px;justify-content:space-between;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;margin-bottom:10px}
+#pcalc .pc-t{width:100%;border-collapse:collapse}
+#pcalc .pc-t th,#pcalc .pc-t td{border:1px solid #666;padding:6px 8px;text-align:right}
+#pcalc .pc-t th{background:#eee}
+#pcalc .pc-tot{margin-top:12px;font-size:20px;text-align:left}
+#pcalc .pc-foot{text-align:center;font-weight:700;margin-top:18px}
+@media print{
+  body.pc-print>*{display:none!important}
+  body.pc-print>#pcalc{display:block!important}
+}
 </style>
 </head>
 <body>
@@ -287,6 +302,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   </div>
 </main>
 <div id="rcpt" dir="rtl"></div>
+<div id="pcalc" dir="rtl"></div>
 
 <script>
 (function(){
@@ -368,7 +384,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function blankW(){var o={w:"",h:"",hb:HB[0],hd:"",type:CURTAIN[0],lining:false,velvet:false,mount:MOUNT[0],model:MODELS[0],full:"2",fabric:"",photos:[],note:"",rt:ROLL[0],ctrl:CTRL[0],color:"",meters:"",dim:"",item:"",lm:"",pc:PC[0],w2:"",h2:"",sd:SIDES[0],sd2:SIDES[1],pm:"",ins:"",lay:LAY[0],chm:"",vlm:"",pcn:"",rl1:"",rp1:"",rl2:"",rp2:"",rl3:"",rp3:""};for(var i=3;i<=10;i++){o["w"+i]="";o["h"+i]="";o["sd"+i]=i%2?SIDES[0]:SIDES[1];}return o;}
   function pcN(w){var n=parseInt(w.pcn,10);if(!(n>0))return 0;return Math.min(n,100);}
   function morePieces(w){for(var i=2;i<=100;i++){if(w["w"+i]||w["h"+i])return true;}return false;}
-  function blankP(){return{fab:"",chf:"",vel:"",lin:"",rod:"",tail:"1.5",ltail:"",inst:"5",bases:"",basev:""};}
+  function blankP(){return{fab:"",chf:"",vel:"",lin:"",rod:"",tail:"1.5",ltail:"",inst:"5",bases:"",basev:"",ring:""};}
   function blankR(){return{name:"",wins:[blankW()],price:blankP()};}
   var KEY2="khushfa-jobs-v1";
   var store={cur:null,jobs:{}};
@@ -458,13 +474,14 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function roundRod(m){if(!(m>0))return 0;if(m>2&&m<=2.5)return 2.5;return Math.ceil(m-1e-9);}
   function priceCalc(r){
     var P=r.price||blankP(),n=function(x){return parseFloat(x)||0;};
-    var fm=0,fb=0,cm=0,vm=0,lm=0,rm=0,rt=0,nw=0;
+    var fm=0,fb=0,cm=0,vm=0,lm=0,rm=0,rt=0,nw=0,rg=0;
     r.wins.forEach(function(w){
+      if(w.model===MODELS[1])rg+=ringsOf(w);
       var f=fabricOf(w);fm+=f;if(w.velvet&&((parseFloat(w.chm)||0)+(parseFloat(w.vlm)||0))>0){cm+=parseFloat(w.chm)||0;vm+=parseFloat(w.vlm)||0;}else fb+=f;if(w.lining){var lw=parseFloat(w.lm);lm+=lw>0?lw:f;}
       var wm=(parseFloat(w.w)||0)/100;var L=Math.max(1,LAY.indexOf(w.lay)+1);if(wm>0){nw+=L;}for(var q=1;q<=L;q++){var rl=parseFloat(w["rl"+q])||0,rp=parseFloat(w["rp"+q])||0;rm+=rl;rt+=rl*rp;}
     });
     fm=Math.round(fm*10)/10;fb=Math.round(fb*10)/10;cm=Math.round(cm*10)/10;vm=Math.round(vm*10)/10;lm=Math.round(lm*10)/10;
-    var rows=[["القماش",fb,n(P.fab),"م"],["الشيفون",cm,n(P.chf),"م"],["المخمل",vm,n(P.vel),"م"],["أجور الخياط",fm,n(P.tail),"م"],["البطانة",lm,n(P.lin),"م"],["أجور خياطة البطانة",lm,n(P.ltail),"م"],["ثمن سياخ",Math.round(rm*100)/100,0,"م",Math.round(rt*100)/100,true],["قواعد",n(P.bases),n(P.basev),"قاعدة"],["التركيب",nw,n(P.inst),"تركيب"]];
+    var rows=[["القماش",fb,n(P.fab),"م"],["الشيفون",cm,n(P.chf),"م"],["المخمل",vm,n(P.vel),"م"],["أجور الخياط",fm,n(P.tail),"م"],["البطانة",lm,n(P.lin),"م"],["أجور خياطة البطانة",lm,n(P.ltail),"م"],["ثمن سياخ",Math.round(rm*100)/100,0,"م",Math.round(rt*100)/100,true],["الحلقات",rg,n(P.ring),"حلقة"],["قواعد",n(P.bases),n(P.basev),"قاعدة"],["التركيب",nw,n(P.inst),"تركيب"]];
     var total=0;rows.forEach(function(x){if(x.length<5)x.push(x[1]*x[2]);total+=x[4];});
     return{rows:rows,total:total};
   }
@@ -480,8 +497,28 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     function f(k,l){return '<div><label>'+l+'</label><input data-p="'+k+'" inputmode="decimal" value="'+esc(P[k])+'"></div>';}
     return '<div class="pricebox noprint"'+(priceOpen[ri]?'':' hidden')+'><h3>💰 قيمة البرداية — الغرفة '+(ri+1)+'</h3><div class="grid">'+
       f("fab","سعر القماش للمتر ($)")+f("chf","سعر الشيفون للمتر ($)")+f("vel","سعر المخمل للمتر ($)")+f("tail","أجور الخياط للمتر ($)")+f("lin","سعر البطانة للمتر ($)")+f("ltail","أجور خياطة البطانة للمتر ($)")+
-      f("inst","أجور التركيب للنافذة ($)")+f("bases","عدد القواعد")+f("basev","قيمة القاعدة الواحدة ($)")+
-      '</div><div class="calc" data-pres>'+priceHtml(r)+'</div></div>';
+      f("inst","أجور التركيب للنافذة ($)")+f("ring","سعر الحلقة الواحدة ($)")+f("bases","عدد القواعد")+f("basev","قيمة القاعدة الواحدة ($)")+
+      '</div><div class="calc" data-pres>'+priceHtml(r)+'</div><div class="bar" style="margin-top:10px"><button type="button" class="primary" data-pprint="1">🖨 طباعة حساب القيمة</button></div></div>';
+  }
+
+  /* ---------- print price calculation ---------- */
+  function printPriceCalc(r,ri){
+    var c=priceCalc(r),rows=c.rows.filter(function(x){return x[1]>0||x[4]>0;});
+    if(!rows.length){alert("لا توجد قيمة محسوبة بعد. أدخل القياسات والأسعار أولاً.");return;}
+    var hd=(state&&state.head)||{},lg=document.querySelector(".logo-light");
+    var h='<div class="pc-head">'+(lg&&lg.src?'<img alt="" src="'+lg.src+'">':'')+'<div>ستائر وأقمشة مفروشات</div></div>';
+    h+='<h2 class="pc-title">حساب قيمة الستائر</h2>';
+    h+='<div class="pc-info"><span>الزبون: <b>'+esc(hd.name||"-")+'</b></span>'+(hd.phone?'<span>الهاتف: <b dir="ltr">'+esc(hd.phone)+'</b></span>':'')+'<span>'+esc(r.name||("الغرفة "+(ri+1)))+'</span><span>التاريخ: <b dir="ltr">'+esc(hd.date||today())+'</b></span></div>';
+    h+='<table class="pc-t"><tr><th>البند</th><th>الكمية</th><th>السعر</th><th>المبلغ</th></tr>';
+    rows.forEach(function(x){
+      h+='<tr><td>'+x[0]+'</td><td>'+x[1]+' '+x[3]+'</td><td>'+(x[5]?'—':money(x[2]))+'</td><td>'+money(x[4])+'</td></tr>';
+    });
+    h+='</table><div class="pc-tot">الإجمالي: <b>'+money(c.total)+'</b></div><div class="pc-foot">شكراً لاختياركم خشفة</div>';
+    var box=document.getElementById("pcalc");box.innerHTML=h;
+    document.body.classList.add("pc-print");
+    function cleanup(){window.removeEventListener("afterprint",cleanup);document.body.classList.remove("pc-print");box.innerHTML="";}
+    window.addEventListener("afterprint",cleanup);
+    setTimeout(function(){window.print();setTimeout(cleanup,10000);},80);
   }
   function roomFabric(r){var t=0;r.wins.forEach(function(w){t+=fabricOf(w);});return Math.round(t*10)/10;}
 
@@ -650,7 +687,9 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var b=e.target.closest("button");if(!b)return;
     var sec=b.closest("[data-ri]"),ri=sec?+sec.getAttribute("data-ri"):-1;
     var wEl=b.closest("[data-wi]"),wi=wEl?+wEl.getAttribute("data-wi"):-1;
-    if(b.hasAttribute("data-price")){
+    if(b.hasAttribute("data-pprint")){
+      printPriceCalc(state.rooms[ri],ri);
+    }else if(b.hasAttribute("data-price")){
       var pb=sec.querySelector(".pricebox");pb.hidden=!pb.hidden;priceOpen[ri]=!pb.hidden;
       if(!pb.hidden)pb.scrollIntoView({behavior:"smooth",block:"nearest"});
     }else if(b.hasAttribute("data-velvet")){
