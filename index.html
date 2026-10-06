@@ -917,16 +917,17 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function arNum(v){return parseFloat(String(v||"").replace(/[٠-٩]/g,function(d){return d.charCodeAt(0)-1632;}).replace(/[٬,\s]/g,"").replace("٫","."));}
   document.getElementById("curSel").addEventListener("change",function(e){
     var to=e.target.value,from=curOf();if(to===from)return;
-    var msg=to==="syp"?"التحويل إلى الليرة السورية.\nأدخل سعر الصرف: كم ليرة سورية = 1 دولار؟\n(سيتم تحويل كل الأسعار المدخلة تلقائياً)":"التحويل إلى الدولار.\nأدخل سعر الصرف: كم ليرة سورية = 1 دولار؟\n(سيتم تحويل كل الأسعار المدخلة تلقائياً)";
-    var rate=arNum(window.prompt(msg,state.head.rate||""));
-    if(!(rate>0)){e.target.value=from;return;}
-    function conv(v){if(v===""||v==null)return v;var n=parseFloat(v);if(!isFinite(n))return v;n=to==="syp"?Math.round(n*rate):Math.round(n/rate*100)/100;return String(n);}
+    var msg=to==="syp"?"التحويل إلى الليرة السورية.\nأدخل سعر الصرف (كم ليرة = 1 دولار) ليتم تحويل الأسعار المدخلة تلقائياً.\n\nأو اتركه فارغاً (أو 0) لتغيير العملة فقط وإدخال الأسعار بالليرة يدوياً بدون تحويل.":"التحويل إلى الدولار.\nأدخل سعر الصرف (كم ليرة = 1 دولار) ليتم تحويل الأسعار المدخلة تلقائياً.\n\nأو اتركه فارغاً (أو 0) لتغيير العملة فقط وإدخال الأسعار بالدولار يدوياً بدون تحويل.";
+    var ans=window.prompt(msg,state.head.rate||"");
+    if(ans===null){e.target.value=from;return;}
+    var rate=arNum(ans),noConv=!(rate>0);
+    function conv(v){if(noConv)return v;if(v===""||v==null)return v;var n=parseFloat(v);if(!isFinite(n))return v;n=to==="syp"?Math.round(n*rate):Math.round(n/rate*100)/100;return String(n);}
     state.rooms.forEach(function(r){
       ["fab","chf","vel","lin","ltail","tail","inst","ring","basev"].forEach(function(k){if(r.price)r.price[k]=conv(r.price[k]);});
       r.wins.forEach(function(w){["rp1","rp2","rp3"].forEach(function(k){w[k]=conv(w[k]);});});
     });
     ["disc","deposit","deposit2"].forEach(function(k){state.head[k]=conv(state.head[k]);});
-    state.head.cur=to;state.head.rate=String(rate);
+    state.head.cur=to;state.head.rate=noConv?"":String(rate);
     save();fill();render();renderStatus();
   });
   function fill(){
