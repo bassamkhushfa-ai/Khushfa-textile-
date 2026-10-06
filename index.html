@@ -183,16 +183,16 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   body.rcpt-print>#rcpt{display:block!important}
 }
 /* ---- print price calculation ---- */
-#pcalc{display:none;color:#000;background:#fff;font-family:Tahoma,"Segoe UI","IBM Plex Sans Arabic",sans-serif;font-size:14px;line-height:1.5;direction:rtl;padding:10mm}
+#pcalc{display:none;color:#000;background:#fff;font-family:Tahoma,"Segoe UI","IBM Plex Sans Arabic",sans-serif;font-size:14px;line-height:1.5;direction:rtl;width:76mm;margin:0 auto;padding:2mm 0 8mm}
 #pcalc .pc-head{text-align:center}
-#pcalc .pc-head img{height:28mm;max-width:100%;filter:grayscale(1) brightness(.65) contrast(2.2)}
-#pcalc .pc-title{text-align:center;margin:6px 0 10px;font-size:20px}
-#pcalc .pc-info{display:flex;flex-wrap:wrap;gap:6px 22px;justify-content:space-between;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;margin-bottom:10px}
+#pcalc .pc-head img{height:26mm;max-width:100%;filter:grayscale(1) brightness(.65) contrast(2.2)}
+#pcalc .pc-title{text-align:center;margin:4px 0 6px;font-size:18px}
+#pcalc .pc-info{display:flex;flex-wrap:wrap;gap:6px 22px;justify-content:space-between;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px 0;margin-bottom:6px;font-size:13px}
 #pcalc .pc-t{width:100%;border-collapse:collapse}
-#pcalc .pc-t th,#pcalc .pc-t td{border:1px solid #666;padding:6px 8px;text-align:right}
+#pcalc .pc-t th,#pcalc .pc-t td{border:1px solid #666;padding:4px 3px;text-align:right;font-size:12px}
 #pcalc .pc-t th{background:#eee}
-#pcalc .pc-tot{margin-top:12px;font-size:20px;text-align:left}
-#pcalc .pc-foot{text-align:center;font-weight:700;margin-top:18px}
+#pcalc .pc-tot{margin-top:8px;font-size:18px;text-align:left}
+#pcalc .pc-foot{text-align:center;font-weight:700;margin-top:8px}
 @media print{
   body.pc-print>*{display:none!important}
   body.pc-print>#pcalc{display:block!important}
@@ -473,16 +473,21 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   var priceOpen={};
   function money(x){return "$"+(Math.round(x*100)/100);}
   function roundRod(m){if(!(m>0))return 0;if(m>2&&m<=2.5)return 2.5;return Math.ceil(m-1e-9);}
+  function rodRows(m){
+    var ks=Object.keys(m),out=[];
+    ks.forEach(function(k){var len=Math.round(m[k]*100)/100,pr=parseFloat(k)||0;out.push(["ثمن سياخ",len,pr,"م",Math.round(len*pr*100)/100]);});
+    return out;
+  }
   function priceCalc(r){
     var P=r.price||blankP(),n=function(x){return parseFloat(x)||0;};
-    var fm=0,fb=0,cm=0,vm=0,lm=0,rm=0,rt=0,nw=0,rg=0;
+    var fm=0,fb=0,cm=0,vm=0,lm=0,rm=0,rt=0,nw=0,rg=0;var rodMap={};
     r.wins.forEach(function(w){
       if(w.model===MODELS[1])rg+=ringsOf(w);
       var f=fabricOf(w);fm+=f;if(w.velvet&&((parseFloat(w.chm)||0)+(parseFloat(w.vlm)||0))>0){cm+=parseFloat(w.chm)||0;vm+=parseFloat(w.vlm)||0;}else fb+=f;if(w.lining){var lw=parseFloat(w.lm);lm+=lw>0?lw:liningDef(w,f);}
-      var wm=(parseFloat(w.w)||0)/100;var L=Math.max(1,LAY.indexOf(w.lay)+1);if(wm>0){nw+=L;}for(var q=1;q<=L;q++){var rl=parseFloat(w["rl"+q])||0,rp=parseFloat(w["rp"+q])||0;rm+=rl;rt+=rl*rp;}
+      var wm=(parseFloat(w.w)||0)/100;var L=Math.max(1,LAY.indexOf(w.lay)+1);if(wm>0){nw+=L;}for(var q=1;q<=L;q++){var rl=parseFloat(w["rl"+q])||0,rp=parseFloat(w["rp"+q])||0;rm+=rl;rt+=rl*rp;if(rl>0){rodMap[rp]=(rodMap[rp]||0)+rl;}}
     });
     fm=Math.round(fm*10)/10;fb=Math.round(fb*10)/10;cm=Math.round(cm*10)/10;vm=Math.round(vm*10)/10;lm=Math.round(lm*10)/10;
-    var rows=[["القماش",fb,n(P.fab),"م"],["الشيفون",cm,n(P.chf),"م"],["المخمل",vm,n(P.vel),"م"],["أجور الخياط",fm,n(P.tail),"م"],["البطانة",lm,n(P.lin),"م"],["أجور خياطة البطانة",lm,n(P.ltail),"م"],["ثمن سياخ",Math.round(rm*100)/100,0,"م",Math.round(rt*100)/100,true],["الحلقات",rg,n(P.ring),"حلقة"],["قواعد",n(P.bases),n(P.basev),"قاعدة"],["التركيب",nw,n(P.inst),"تركيب"]];
+    var rows=[["القماش",fb,n(P.fab),"م"],["الشيفون",cm,n(P.chf),"م"],["المخمل",vm,n(P.vel),"م"],["أجور الخياط",fm,n(P.tail),"م"],["البطانة",lm,n(P.lin),"م"],["أجور خياطة البطانة",lm,n(P.ltail),"م"],].concat(rodRows(rodMap)).concat([["الحلقات",rg,n(P.ring),"حلقة"],["قواعد",n(P.bases),n(P.basev),"قاعدة"],["التركيب",nw,n(P.inst),"تركيب"]]);
     var total=0;rows.forEach(function(x){if(x.length<5)x.push(x[1]*x[2]);total+=x[4];});
     return{rows:rows,total:total};
   }
@@ -530,8 +535,9 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     });
     h+='</table><div class="pc-tot">الإجمالي: <b>'+money(d.total)+'</b></div><div class="pc-foot">شكراً لاختياركم خشفة</div>';
     var box=document.getElementById("pcalc");box.innerHTML=h;
+    var st=document.createElement("style");st.textContent="@page{size:80mm auto;margin:0}";document.head.appendChild(st);
     document.body.classList.add("pc-print");
-    function cleanup(){window.removeEventListener("afterprint",cleanup);document.body.classList.remove("pc-print");box.innerHTML="";}
+    function cleanup(){window.removeEventListener("afterprint",cleanup);document.body.classList.remove("pc-print");box.innerHTML="";if(st.parentNode)st.parentNode.removeChild(st);}
     window.addEventListener("afterprint",cleanup);
     setTimeout(function(){window.print();setTimeout(cleanup,10000);},80);
   }
@@ -1193,7 +1199,9 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       }else if(kd==="roller"){
         r.wins.forEach(function(w,wi){
           var v=rollTot(w);
-          if(v>0){total+=v;items.push({t:rm+" - نافذة "+(wi+1),s:(w.rt||"رول")+" — "+fabricOf(w)+" م² × "+money(rn(w.pm))+(rn(w.ins)?" + تركيب "+money(rn(w.ins)):""),v:money(v)});}
+          if(v>0){total+=v;items.push({t:rm+" - نافذة "+(wi+1),s:(w.rt||"رول")+" — "+fabricOf(w)+" م² × "+money(rn(w.pm))+(rn(w.ins)?" + تركيب "+money(rn(w.ins)):""),v:money(v)});
+            var cn=pcN(w);for(var pi=1;pi<=cn;pi++){var xx=pi===1?"":String(pi),pw=w["w"+xx],ph=w["h"+xx];if(!pw&&!ph)continue;
+              items.push({t:"   قطعة "+pi,s:"العرض "+(pw||"-")+" سم × الطول "+finalH(ph)+" سم",v:pieceArea(pw,ph)+" م²"});}}
         });
       }
     });
