@@ -449,6 +449,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function rollVal(w){var pm=parseFloat(w.pm)||0;return Math.round(fabricOf(w)*pm*100)/100;}
   function rollTot(w){return rollVal(w)+(parseFloat(w.ins)||0);}
+  function liningDef(w,f){var c=parseFloat(w.chm)||0;return(w.velvet&&c>0)?c:f;}
   function velvetText(w){return "شيفون: "+(w.chm||"-")+" م — مخمل: "+(w.vlm||"-")+" م";}
   function openVelvet(w,wEl,fresh){
     var m=document.createElement("div");m.className="modal";
@@ -477,7 +478,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var fm=0,fb=0,cm=0,vm=0,lm=0,rm=0,rt=0,nw=0,rg=0;
     r.wins.forEach(function(w){
       if(w.model===MODELS[1])rg+=ringsOf(w);
-      var f=fabricOf(w);fm+=f;if(w.velvet&&((parseFloat(w.chm)||0)+(parseFloat(w.vlm)||0))>0){cm+=parseFloat(w.chm)||0;vm+=parseFloat(w.vlm)||0;}else fb+=f;if(w.lining){var lw=parseFloat(w.lm);lm+=lw>0?lw:f;}
+      var f=fabricOf(w);fm+=f;if(w.velvet&&((parseFloat(w.chm)||0)+(parseFloat(w.vlm)||0))>0){cm+=parseFloat(w.chm)||0;vm+=parseFloat(w.vlm)||0;}else fb+=f;if(w.lining){var lw=parseFloat(w.lm);lm+=lw>0?lw:liningDef(w,f);}
       var wm=(parseFloat(w.w)||0)/100;var L=Math.max(1,LAY.indexOf(w.lay)+1);if(wm>0){nw+=L;}for(var q=1;q<=L;q++){var rl=parseFloat(w["rl"+q])||0,rp=parseFloat(w["rp"+q])||0;rm+=rl;rt+=rl*rp;}
     });
     fm=Math.round(fm*10)/10;fb=Math.round(fb*10)/10;cm=Math.round(cm*10)/10;vm=Math.round(vm*10)/10;lm=Math.round(lm*10)/10;
@@ -492,13 +493,23 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     }).join("");
     return (h||'أدخل القياسات أولاً.')+'<div class="tot">إجمالي الغرفة: <b>'+money(c.total)+'</b></div>';
   }
+  function winPriceHtml(r){
+    var h='';
+    r.wins.forEach(function(w,wi){
+      var L=Math.max(1,LAY.indexOf(w.lay)+1),x='';
+      for(var i=1;i<=L;i++){x+=(L>1?'<div class="full"><b>السيخ '+i+'</b></div>':'')+'<div class="unit"><label>طول السيخ'+(L>1?' '+i:'')+'</label><input data-pw="'+wi+'" data-pk="rl'+i+'" data-pr inputmode="decimal" value="'+esc(w["rl"+i])+'"><span>م</span></div><div class="unit"><label>سعر المتر</label><input data-pw="'+wi+'" data-pk="rp'+i+'" data-pr inputmode="decimal" value="'+esc(w["rp"+i])+'"><span>$</span></div>';}
+      if(w.model===MODELS[1])x+='<div class="unit"><label>عدد الحلقات ('+RINGS_PER_M+' لكل متر قماش)</label><input data-prg="'+wi+'" data-pr readonly value="'+ringsOf(w)+'"></div>';
+      h+='<div class="grid" style="margin-top:10px"><div class="full"><b>النافذة '+(wi+1)+'</b></div>'+x+'</div>';
+    });
+    return h;
+  }
   function pricePanel(r,ri){
     var P=r.price||blankP();
     function f(k,l){return '<div><label>'+l+'</label><input data-p="'+k+'" inputmode="decimal" value="'+esc(P[k])+'"></div>';}
     return '<div class="pricebox noprint"'+(priceOpen[ri]?'':' hidden')+'><h3>💰 قيمة البرداية — الغرفة '+(ri+1)+'</h3><div class="grid">'+
       f("fab","سعر القماش للمتر ($)")+f("chf","سعر الشيفون للمتر ($)")+f("vel","سعر المخمل للمتر ($)")+f("tail","أجور الخياط للمتر ($)")+f("lin","سعر البطانة للمتر ($)")+f("ltail","أجور خياطة البطانة للمتر ($)")+
       f("inst","أجور التركيب للنافذة ($)")+f("ring","سعر الحلقة الواحدة ($)")+f("bases","عدد القواعد")+f("basev","قيمة القاعدة الواحدة ($)")+
-      '</div><div class="calc" data-pres>'+priceHtml(r)+'</div><div class="bar" style="margin-top:10px"><button type="button" class="primary" data-pprint="1">🖨 طباعة حساب القيمة</button><button type="button" class="phonebtn" data-psend="1">📤 إرسال للابتوب للطباعة</button></div></div>';
+      '</div>'+winPriceHtml(r)+'<div class="calc" data-pres>'+priceHtml(r)+'</div><div class="bar" style="margin-top:10px"><button type="button" class="primary" data-pprint="1">🖨 طباعة حساب القيمة</button><button type="button" class="phonebtn" data-psend="1">📤 إرسال للابتوب للطباعة</button></div></div>';
   }
 
   /* ---------- print price calculation ---------- */
@@ -578,12 +589,12 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     }else{
       mid=wd+'<div class="full"><label>كيف أُخذ الارتفاع؟</label><select data-k="hb">'+opts(HB,w.hb)+'</select></div>'+
       '<div class="full" data-hdet'+(needsDetail(w.hb)?'':' hidden')+'><label>تفاصيل الحالة / المسافة</label><input data-k="hd" value="'+esc(w.hd)+'" placeholder="مثال: فراغ 5 سم عن الأرض"></div>'+
-      sel("type","نوع الستارة",CURTAIN)+sel("mount","مكان التركيب",MOUNT)+sel("lay","عدد الطبقات",LAY)+rodsHtml()+
+      sel("type","نوع الستارة",CURTAIN)+sel("mount","مكان التركيب",MOUNT)+sel("lay","عدد الطبقات",LAY)+
       '<div class="full chk"><label><input type="checkbox" data-k="lining"'+(w.lining?' checked':'')+'>مع بطانة</label>'+
       '<label><input type="checkbox" data-k="velvet"'+(w.velvet?' checked':'')+'>مخمل على الأطراف</label></div>'+
       '<div class="full calc" data-vbox'+(w.velvet?'':' hidden')+'><span data-vtxt>'+velvetText(w)+'</span> <button type="button" class="noprint" data-velvet style="min-height:34px;padding:0 10px;margin-inline-start:8px">✏️ تعديل الأمتار</button></div>'+
-      '<div class="full" data-lmbox'+(w.lining?'':' hidden')+'><label>أمتار البطانة (إذا تركتها فارغة تُحسب مثل أمتار القماش)</label><input data-k="lm" inputmode="decimal" value="'+esc(w.lm)+'" placeholder="مثل أمتار القماش"></div>'+
-      sel("model","موديل الستارة",MODELS.indexOf(w.model)<0&&w.model?MODELS.concat([w.model]):MODELS)+'<div class="unit"><label>نسبة الكشكشة (تلقائية، يمكنك تغييرها)</label><input data-k="full" data-fl inputmode="decimal" value="'+esc(w.full)+'"></div><div class="unit" data-rgbox'+(w.model===MODELS[1]?'':' hidden')+'><label>عدد الحلقات ('+RINGS_PER_M+' لكل متر قماش)</label><input data-rg readonly value="'+ringsOf(w)+'"></div>'+ph("القماش / اللون");
+      '<div class="full" data-lmbox'+(w.lining?'':' hidden')+'><label>أمتار البطانة (إذا تركتها فارغة تُحسب مثل أمتار الشيفون)</label><input data-k="lm" inputmode="decimal" value="'+esc(w.lm)+'" placeholder="مثل أمتار الشيفون"></div>'+
+      sel("model","موديل الستارة",MODELS.indexOf(w.model)<0&&w.model?MODELS.concat([w.model]):MODELS)+'<div class="unit"><label>نسبة الكشكشة (تلقائية، يمكنك تغييرها)</label><input data-k="full" data-fl inputmode="decimal" value="'+esc(w.full)+'"></div>'+ph("القماش / اللون");
     }
     return '<div class="w" data-wi="'+wi+'"><div class="win-head"><h3>'+k.unit+' '+(wi+1)+'</h3>'+(n>1?'<button type="button" class="del" data-delwin="'+wi+'">'+k.del+'</button>':'')+'</div>'+
     '<div class="grid">'+mid+'<div class="full"><label>ملاحظات</label><textarea data-k="note">'+esc(w.note)+'</textarea></div></div>'+
@@ -641,6 +652,8 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     if(e.target.getAttribute("data-rk")){r.name=e.target.value;save();return;}
     var pk=e.target.getAttribute("data-p");
     if(pk){r.price[pk]=e.target.value;sec.querySelector("[data-pres]").innerHTML=priceHtml(r);summary();save();return;}
+    var pwk=e.target.getAttribute("data-pk");
+    if(pwk){var ww=r.wins[+e.target.getAttribute("data-pw")];ww[pwk]=e.target.value;sec.querySelector("[data-pres]").innerHTML=priceHtml(r);summary();save();return;}
     var k=e.target.getAttribute("data-k");if(!k)return;
     var wEl=e.target.closest("[data-wi]");var w=r.wins[+wEl.getAttribute("data-wi")];
     w[k]=(e.target.type==="checkbox")?e.target.checked:e.target.value;
@@ -655,12 +668,12 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     }
     if(state.kind==="roller"&&k==="ctrl"){save();render();return;}
     if(state.kind==="curtain"&&k==="lay"){save();render();return;}
-    if(k==="model"&&MFULL[w.model]){w.full=MFULL[w.model];var fl=wEl.querySelector("[data-fl]");if(fl)fl.value=w.full;var gb=wEl.querySelector("[data-rgbox]");if(gb)gb.hidden=w.model!==MODELS[1];}
+    if(k==="model"&&MFULL[w.model]){w.full=MFULL[w.model];var fl=wEl.querySelector("[data-fl]");if(fl)fl.value=w.full;save();render();return;}
     if(k==="velvet"){var vb=wEl.querySelector("[data-vbox]");if(vb)vb.hidden=!w.velvet;if(w.velvet)openVelvet(w,wEl,true);}
     if(k==="lining"){var lb=wEl.querySelector("[data-lmbox]");if(lb)lb.hidden=!w.lining;}
     if(k==="hb")wEl.querySelector("[data-hdet]").hidden=!needsDetail(w.hb);
     wEl.querySelector("[data-calc]").textContent=fabricOf(w);
-    var rgEl=wEl.querySelector("[data-rg]");if(rgEl)rgEl.value=ringsOf(w);
+    sec.querySelectorAll("[data-prg]").forEach(function(el){el.value=ringsOf(r.wins[+el.getAttribute("data-prg")]);});
     var rvEl=wEl.querySelector("[data-rv]");if(rvEl)rvEl.value=rollVal(w)>0?money(rollVal(w)):"";
     var rnEl=wEl.querySelector("[data-rn]");if(rnEl)rnEl.value=rollTot(w)>0?money(rollTot(w)):"";
     wEl.querySelectorAll("[data-pa]").forEach(function(el){var n=el.getAttribute("data-pa"),x=n==="1"?"":n;el.textContent=pieceArea(w["w"+x],w["h"+x])||"-";});
