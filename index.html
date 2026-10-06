@@ -279,6 +279,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     <div class="grid" style="margin-top:10px" id="foot">
       <div class="full"><label>ملاحظات عامة</label><textarea data-h="notes"></textarea></div>
       <div><label id="lblInstall">موعد التركيب المتفق عليه</label><input data-h="install" type="date"></div>
+      <div><label>الحسم ($)</label><input data-h="disc" inputmode="decimal"></div>
       <div><label>العربون المدفوع</label><input data-h="deposit" inputmode="decimal"></div>
       <div><label>الدفعة الثانية</label><input data-h="deposit2" inputmode="decimal"></div>
       <div><label>تاريخ الدفعة الثانية</label><input data-h="deposit2date" type="date"></div>
@@ -477,6 +478,18 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var ks=Object.keys(m),out=[];
     ks.forEach(function(k){var len=Math.round(m[k]*100)/100,pr=parseFloat(k)||0;out.push(["ثمن سياخ",len,pr,"م",Math.round(len*pr*100)/100]);});
     return out;
+  }
+  function winCost(P,w){
+    var n=function(x){return parseFloat(x)||0;},t=0;
+    var f=fabricOf(w),fb=0,cm=0,vm=0,lm=0;
+    if(w.velvet&&(n(w.chm)+n(w.vlm))>0){cm=n(w.chm);vm=n(w.vlm);}else fb=f;
+    if(w.lining){var lw=parseFloat(w.lm);lm=lw>0?lw:liningDef(w,f);}
+    t+=fb*n(P.fab)+cm*n(P.chf)+vm*n(P.vel)+f*n(P.tail)+lm*n(P.lin)+lm*n(P.ltail);
+    var L=Math.max(1,LAY.indexOf(w.lay)+1);
+    if(n(w.w)>0)t+=L*n(P.inst);
+    for(var q=1;q<=L;q++)t+=n(w["rl"+q])*n(w["rp"+q]);
+    if(w.model===MODELS[1])t+=ringsOf(w)*n(P.ring);
+    return Math.round(t*100)/100;
   }
   function priceCalc(r){
     var P=r.price||blankP(),n=function(x){return parseFloat(x)||0;};
@@ -1195,7 +1208,12 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       var rm=r.name||("الغرفة "+(ri+1));
       if(kd==="curtain"){
         var c=priceCalc(r);
-        if(c.total>0){total+=c.total;items.push({t:rm,s:"عدد النوافذ: "+r.wins.length+" — القماش: "+roomFabric(r)+" م",v:money(c.total)});}
+        if(c.total>0){total+=c.total;var P=r.price||blankP();
+          items.push({t:rm,s:"عدد النوافذ: "+r.wins.length,v:""});
+          var bs=rn(P.bases)*rn(P.basev),nwn=r.wins.length,acc=0;
+          r.wins.forEach(function(w,wi){var wv=Math.round((winCost(P,w)+bs/nwn)*100)/100;
+            if(wi===nwn-1)wv=Math.round((c.total-acc)*100)/100;acc+=wv;items.push({t:"نافذة "+(wi+1),s:"",v:money(wv)});});
+          items.push({t:"إجمالي "+rm,s:"",v:money(c.total)});}
       }else if(kd==="roller"){
         r.wins.forEach(function(w,wi){
           var v=rollTot(w);
@@ -1209,7 +1227,8 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       alert(kd==="roller"?"لا توجد قيمة محسوبة بعد. أدخل سعر المتر للنوافذ أولاً.":"لا توجد قيمة محسوبة بعد. اضغط «حساب القيمة» في الغرفة وأدخل الأسعار أولاً.");
       return null;
     }
-    var d1=rn(j.head.deposit),d2=rn(j.head.deposit2),tot=[["الإجمالي",money(total),"rb"]];
+    var d1=rn(j.head.deposit),d2=rn(j.head.deposit2),dc=rn(j.head.disc),tot=[["الإجمالي",money(total),dc?"":"rb"]];
+    if(dc){tot.push(["الحسم",money(dc)]);tot.push(["الصافي",money(total-dc),"rb"]);total-=dc;}
     if(d1)tot.push(["العربون",money(d1)]);
     if(d2)tot.push(["الدفعة الثانية"+(j.head.deposit2date?" ("+j.head.deposit2date+")":""),money(d2)]);
     if(d1||d2)tot.push(["المتبقي",money(total-d1-d2),"rb"]);
