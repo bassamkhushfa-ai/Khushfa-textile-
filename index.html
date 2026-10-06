@@ -498,28 +498,35 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     return '<div class="pricebox noprint"'+(priceOpen[ri]?'':' hidden')+'><h3>💰 قيمة البرداية — الغرفة '+(ri+1)+'</h3><div class="grid">'+
       f("fab","سعر القماش للمتر ($)")+f("chf","سعر الشيفون للمتر ($)")+f("vel","سعر المخمل للمتر ($)")+f("tail","أجور الخياط للمتر ($)")+f("lin","سعر البطانة للمتر ($)")+f("ltail","أجور خياطة البطانة للمتر ($)")+
       f("inst","أجور التركيب للنافذة ($)")+f("ring","سعر الحلقة الواحدة ($)")+f("bases","عدد القواعد")+f("basev","قيمة القاعدة الواحدة ($)")+
-      '</div><div class="calc" data-pres>'+priceHtml(r)+'</div><div class="bar" style="margin-top:10px"><button type="button" class="primary" data-pprint="1">🖨 طباعة حساب القيمة</button></div></div>';
+      '</div><div class="calc" data-pres>'+priceHtml(r)+'</div><div class="bar" style="margin-top:10px"><button type="button" class="primary" data-pprint="1">🖨 طباعة حساب القيمة</button><button type="button" class="phonebtn" data-psend="1">📤 إرسال للابتوب للطباعة</button></div></div>';
   }
 
   /* ---------- print price calculation ---------- */
-  function printPriceCalc(r,ri){
+  function pcalcData(r,ri){
     var c=priceCalc(r),rows=c.rows.filter(function(x){return x[1]>0||x[4]>0;});
-    if(!rows.length){alert("لا توجد قيمة محسوبة بعد. أدخل القياسات والأسعار أولاً.");return;}
-    var hd=(state&&state.head)||{},lg=document.querySelector(".logo-light");
+    if(!rows.length){alert("لا توجد قيمة محسوبة بعد. أدخل القياسات والأسعار أولاً.");return null;}
+    var hd=(state&&state.head)||{};
+    return {pc:1,kind:"حساب قيمة الستائر",name:hd.name||"",phone:hd.phone||"",date:hd.date||today(),room:r.name||("الغرفة "+(ri+1)),rows:rows,total:c.total};
+  }
+  function printPcalcData(d){
+    var lg=document.querySelector(".logo-light");
     var h='<div class="pc-head">'+(lg&&lg.src?'<img alt="" src="'+lg.src+'">':'')+'<div>ستائر وأقمشة مفروشات</div></div>';
     h+='<h2 class="pc-title">حساب قيمة الستائر</h2>';
-    h+='<div class="pc-info"><span>الزبون: <b>'+esc(hd.name||"-")+'</b></span>'+(hd.phone?'<span>الهاتف: <b dir="ltr">'+esc(hd.phone)+'</b></span>':'')+'<span>'+esc(r.name||("الغرفة "+(ri+1)))+'</span><span>التاريخ: <b dir="ltr">'+esc(hd.date||today())+'</b></span></div>';
+    h+='<div class="pc-info"><span>الزبون: <b>'+esc(d.name||"-")+'</b></span>'+(d.phone?'<span>الهاتف: <b dir="ltr">'+esc(d.phone)+'</b></span>':'')+'<span>'+esc(d.room)+'</span><span>التاريخ: <b dir="ltr">'+esc(d.date)+'</b></span></div>';
     h+='<table class="pc-t"><tr><th>البند</th><th>الكمية</th><th>السعر</th><th>المبلغ</th></tr>';
-    rows.forEach(function(x){
-      h+='<tr><td>'+x[0]+'</td><td>'+x[1]+' '+x[3]+'</td><td>'+(x[5]?'—':money(x[2]))+'</td><td>'+money(x[4])+'</td></tr>';
+    d.rows.forEach(function(x){
+      h+='<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+' '+esc(x[3])+'</td><td>'+(x[5]?'—':money(x[2]))+'</td><td>'+money(x[4])+'</td></tr>';
     });
-    h+='</table><div class="pc-tot">الإجمالي: <b>'+money(c.total)+'</b></div><div class="pc-foot">شكراً لاختياركم خشفة</div>';
+    h+='</table><div class="pc-tot">الإجمالي: <b>'+money(d.total)+'</b></div><div class="pc-foot">شكراً لاختياركم خشفة</div>';
     var box=document.getElementById("pcalc");box.innerHTML=h;
     document.body.classList.add("pc-print");
     function cleanup(){window.removeEventListener("afterprint",cleanup);document.body.classList.remove("pc-print");box.innerHTML="";}
     window.addEventListener("afterprint",cleanup);
     setTimeout(function(){window.print();setTimeout(cleanup,10000);},80);
   }
+  function printPriceCalc(r,ri){var d=pcalcData(r,ri);if(d)printPcalcData(d);}
+  function sendPriceCalc(r,ri){var d=pcalcData(r,ri);if(d)sendToLaptop(d);}
+
   function roomFabric(r){var t=0;r.wins.forEach(function(w){t+=fabricOf(w);});return Math.round(t*10)/10;}
 
   /* ---------- render ---------- */
@@ -689,6 +696,8 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var wEl=b.closest("[data-wi]"),wi=wEl?+wEl.getAttribute("data-wi"):-1;
     if(b.hasAttribute("data-pprint")){
       printPriceCalc(state.rooms[ri],ri);
+    }else if(b.hasAttribute("data-psend")){
+      sendPriceCalc(state.rooms[ri],ri);
     }else if(b.hasAttribute("data-price")){
       var pb=sec.querySelector(".pricebox");pb.hidden=!pb.hidden;priceOpen[ri]=!pb.hidden;
       if(!pb.hidden)pb.scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -1205,7 +1214,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function sendToLaptop(o){
     if(!window.__ksPrint){alert("المزامنة غير جاهزة. تأكد من الإنترنت ثم أعد المحاولة.");return;}
     window.__ksPrint(o).then(function(){
-      alert("تم إرسال الفاتورة إلى اللابتوب. ستظهر هناك ثم تضغط «طباعة».");
+      alert("تم الإرسال إلى اللابتوب. ستظهر هناك ثم تضغط «طباعة».");
     }).catch(function(r){
       alert(r==="login"?"سجّل الدخول للمزامنة أولاً (زر المزامنة في الصفحة الرئيسية).":r==="offline"?"لا يوجد إنترنت الآن.":r==="timeout"?"لم يتأكد وصول الفاتورة بعد. قد تصل عند عودة الإنترنت.":"تعذر الإرسال ("+r+")");
     });
@@ -1230,14 +1239,14 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         var bt=e.target.closest("button");if(!bt)return;
         var pid=bt.getAttribute("data-pqp"),xid=bt.getAttribute("data-pqx"),id=pid||xid;
         if(!id||!PQ[id])return;
-        if(pid){var o=PQ[id].o;finishPq(id);printReceipt(o);}else finishPq(id);
+        if(pid){var o=PQ[id].o;finishPq(id);if(o.pc)printPcalcData(o);else printReceipt(o);}else finishPq(id);
       });
     }
     var ids=Object.keys(PQ).sort(function(a,c){return PQ[a].u-PQ[c].u;});
     if(!ids.length){b.hidden=true;b.innerHTML="";return;}
     b.hidden=false;
     b.innerHTML=ids.map(function(id){var o=PQ[id].o;
-      return '<div class="pq-row"><span>🖨 فاتورة من الجوال: '+esc(o.name||"زبون بدون اسم")+' — '+esc(o.kind||"")+'</span><span><button type="button" data-pqp="'+id+'">طباعة</button> <button type="button" data-pqx="'+id+'">تجاهل</button></span></div>';
+      return '<div class="pq-row"><span>🖨 من الجوال: '+esc(o.name||"زبون بدون اسم")+' — '+esc(o.kind||"")+'</span><span><button type="button" data-pqp="'+id+'">طباعة</button> <button type="button" data-pqx="'+id+'">تجاهل</button></span></div>';
     }).join("");
   }
   var sp=document.getElementById("sendPrint");
