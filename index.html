@@ -198,6 +198,12 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   body.pc-print>#pcalc{display:block!important}
 }
 </style>
+<style>
+.led .ledhead,.led .ledrow{display:grid;gap:6px;align-items:center;margin-bottom:6px}
+.led .ledhead span{font-size:12px;color:var(--mute)}
+.led .ledrow input{width:100%;min-width:0;box-sizing:border-box;padding:10px 8px;min-height:44px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit}
+.led .ledrow .ledx{position:static;width:34px;height:34px;min-height:0;padding:0;flex:0 0 auto;border-radius:50%;border:1px solid var(--danger);background:transparent;color:var(--danger);font-size:15px}
+</style>
 </head>
 <body>
 <main>
@@ -226,7 +232,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   </div>
 
   <div id="fabView" hidden>
-    <div class="bar noprint"><button type="button" id="fabHome" aria-label="الرئيسية" style="flex:0 0 56px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></button><button type="button" class="primary" id="fabNew">+ زبون جديد</button></div>
+    <div class="bar noprint"><button type="button" id="fabHome" aria-label="الرئيسية" style="flex:0 0 56px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></button><button type="button" class="primary" id="fabNew">+ زبون جديد</button><button type="button" id="catOpen">📖 إعارة كتلوك</button><button type="button" id="whOpen">📦 ترحيل مستودع</button></div>
     <h2 class="sub" style="margin:10px 0">أقمشة كنب - تشكيلات</h2>
     <input id="fabQ" type="search" placeholder="بحث: زبون أو مادة أو رقم" style="width:100%;box-sizing:border-box;padding:10px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit">
     <section class="job" id="fabForm" hidden>
@@ -246,6 +252,18 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         <div><label>التاريخ</label><input id="fDate" type="date"></div>
       </div>
       <div class="bar"><button type="button" class="primary" id="fSave">حفظ</button><button type="button" id="fCancel">إلغاء</button></div>
+    </section>
+    <section class="job led" id="catBox" hidden>
+      <div class="bar noprint"><button type="button" id="catBack">→ رجوع</button></div>
+      <h2 style="margin:12px 0 6px">إعارة كتلوك</h2>
+      <div class="ledhead" style="grid-template-columns:1fr 1fr 36px"><span>اسم الكتلوك</span><span>الزبون ورقم الهاتف</span><span></span></div>
+      <div id="catRows"></div>
+    </section>
+    <section class="job led" id="whBox" hidden>
+      <div class="bar noprint"><button type="button" id="whBack">→ رجوع</button></div>
+      <h2 style="margin:12px 0 6px">ترحيل مستودع</h2>
+      <div class="ledhead" style="grid-template-columns:1.3fr .8fr 1fr 36px"><span>اسم المادة ورقمها</span><span>عدد الأمتار</span><span>التاريخ</span><span></span></div>
+      <div id="whRows"></div>
     </section>
     <div id="fabList"></div>
   </div>
@@ -946,7 +964,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function dayLabel(k){var p=k.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);var t=d.toLocaleDateString("ar",{weekday:"long",year:"numeric",month:"long",day:"numeric"});return k===ftoday()?"اليوم — "+t:t;}
   function showFab(){
     homeView.hidden=true;formView.hidden=true;listView.hidden=true;toolbar.hidden=true;fabView.hidden=false;
-    document.getElementById("fabForm").hidden=true;renderFab();window.scrollTo(0,0);
+    document.getElementById("fabForm").hidden=true;hideLed();window.scrollTo(0,0);
   }
   function renderFab(){
     var q=(document.getElementById("fabQ").value||"").trim().toLowerCase(),days={};
@@ -993,6 +1011,68 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     if(id){var f=fabs.filter(function(x){return x.id===id;})[0];if(f){openFabForm(f);window.scrollTo(0,0);}}
     else if(did)twoStep("هل تريد حذف هذا الزبون؟","سيتم حذف الزبون وبياناته نهائياً ولا يمكن التراجع.",function(){fabs=fabs.filter(function(x){return x.id!==did;});fabPersist();renderFab();});
   });
+
+  /* ---------- catalog loans & warehouse transfers (auto-growing rows) ---------- */
+  var CKEY="khushfa-cat-v1",WKEY="khushfa-wh-v1",cats=[],whs=[];
+  try{cats=JSON.parse(localStorage.getItem(CKEY)||"[]")||[];}catch(e){cats=[];}
+  try{whs=JSON.parse(localStorage.getItem(WKEY)||"[]")||[];}catch(e){whs=[];}
+  var LED={
+    cat:{key:CKEY,arr:cats,box:"catBox",rows:"catRows",cols:"1fr 1fr 36px",f:[{k:"name",ph:"اسم الكتلوك"},{k:"cust",ph:"الزبون ورقم الهاتف"}]},
+    wh:{key:WKEY,arr:whs,box:"whBox",rows:"whRows",cols:"1.3fr .8fr 1fr 36px",f:[{k:"name",ph:"اسم المادة ورقمها"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"},{k:"d",ph:"التاريخ",t:"date"}]}
+  };
+  function ledSave(c){try{localStorage.setItem(c.key,JSON.stringify(c.arr));}catch(e){}if(window.__ks)window.__ks();}
+  function ledNewId(){return String(Date.now())+Math.random().toString(36).slice(2,6);}
+  function ledRowHtml(c,r){
+    return '<div class="ledrow" style="grid-template-columns:'+c.cols+'" data-id="'+esc(r.id)+'">'+c.f.map(function(f){
+      return '<input data-k="'+f.k+'" type="'+(f.t||"text")+'"'+(f.im?' inputmode="'+f.im+'"':'')+' placeholder="'+f.ph+'" aria-label="'+f.ph+'" value="'+esc(r[f.k]||"")+'">';
+    }).join("")+'<button type="button" class="ledx" aria-label="حذف السطر">✕</button></div>';
+  }
+  function ledBlank(){return {id:ledNewId()};}
+  function renderLed(c){
+    c.arr.sort(function(a,b){return String(a.id)<String(b.id)?-1:1;});
+    document.getElementById(c.rows).innerHTML=c.arr.map(function(r){return ledRowHtml(c,r);}).join("")+ledRowHtml(c,ledBlank());
+  }
+  function ledHas(c,row){return c.f.some(function(f){return (row.querySelector('[data-k="'+f.k+'"]').value||"").trim();});}
+  function ledBind(c){
+    var rowsEl=document.getElementById(c.rows);
+    function onEdit(e){
+      var row=e.target.closest(".ledrow");if(!row)return;
+      var id=row.getAttribute("data-id"),has=ledHas(c,row),idx=-1;
+      c.arr.forEach(function(r,i){if(r.id===id)idx=i;});
+      if(has){
+        var o=idx>-1?c.arr[idx]:{id:id};
+        c.f.forEach(function(f){o[f.k]=row.querySelector('[data-k="'+f.k+'"]').value.trim();});
+        if(idx<0)c.arr.push(o);
+        ledSave(c);
+        if(row===rowsEl.lastElementChild){rowsEl.insertAdjacentHTML("beforeend",ledRowHtml(c,ledBlank()));}
+      }else if(idx>-1){c.arr.splice(idx,1);ledSave(c);}
+    }
+    rowsEl.addEventListener("input",onEdit);
+    rowsEl.addEventListener("change",onEdit);
+    rowsEl.addEventListener("click",function(e){
+      var b=e.target.closest(".ledx");if(!b)return;
+      var row=b.closest(".ledrow"),id=row.getAttribute("data-id");
+      function del(){
+        c.arr.forEach(function(r,i){if(r.id===id)c.arr.splice(i,1);});
+        ledSave(c);renderLed(c);
+      }
+      if(ledHas(c,row))twoStep("هل تريد حذف هذا السطر؟","سيتم حذف بياناته نهائياً ولا يمكن التراجع.",del);else if(row!==rowsEl.lastElementChild)del();
+    });
+  }
+  function hideLed(){
+    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;
+    document.getElementById("fabQ").hidden=false;document.getElementById("fabList").hidden=false;renderFab();
+  }
+  function showLed(c){
+    document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
+    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;
+    document.getElementById(c.box).hidden=false;renderLed(c);window.scrollTo(0,0);
+  }
+  ledBind(LED.cat);ledBind(LED.wh);
+  document.getElementById("catOpen").addEventListener("click",function(){showLed(LED.cat);});
+  document.getElementById("whOpen").addEventListener("click",function(){showLed(LED.wh);});
+  document.getElementById("catBack").addEventListener("click",hideLed);
+  document.getElementById("whBack").addEventListener("click",hideLed);
   document.getElementById("fabHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
 
   var fItemsCur=[];
@@ -1074,7 +1154,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function doBackup(){
     persist();fabPersist();
     allPhotos().catch(function(){return {};}).then(function(ph){
-      var data={app:"khushfa-measure",version:1,date:new Date().toISOString(),store:store,fabs:fabs,photos:ph};
+      var data={app:"khushfa-measure",version:1,date:new Date().toISOString(),store:store,fabs:fabs,cats:cats,whs:whs,photos:ph};
       var blob=new Blob([JSON.stringify(data)],{type:"application/json"});
       var name="khushfa-backup-"+ftoday()+".json";
       try{localStorage.setItem(BKKEY,ftoday());}catch(e){}
@@ -1103,6 +1183,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       });
       var have={};fabs.forEach(function(f){have[f.id]=1;});
       (data.fabs||[]).forEach(function(f){if(!have[f.id])fabs.push(f);});
+      [["cat",data.cats],["wh",data.whs]].forEach(function(p){var c=LED[p[0]],h={};c.arr.forEach(function(r){h[r.id]=1;});(p[1]||[]).forEach(function(r){if(r&&!h[r.id])c.arr.push(r);});ledSave(c);});
       var ph=data.photos||{},ids=Object.keys(ph);
       ids.reduce(function(p,id){return p.then(function(){return putPhoto(id,ph[id]);});},Promise.resolve())
         .catch(function(){})
@@ -1120,7 +1201,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   window.KAPP={
     onPrint:function(id,x){try{pqIn(id,x);}catch(e){}},
     isEmpty:function(j){try{return isEmpty(j);}catch(e){return false;}},
-    snap:function(){return {jobs:store.jobs,fabs:fabs,open:{job:(formView.hidden?null:(isSplit()&&!formView.contains(document.activeElement)?null:(state&&state.id))),fab:(document.getElementById("fabForm").hidden?null:(fabEdit==null?null:String(fabEdit)))}};},
+    snap:function(){return {jobs:store.jobs,fabs:fabs,cats:cats,whs:whs,open:{job:(formView.hidden?null:(isSplit()&&!formView.contains(document.activeElement)?null:(state&&state.id))),fab:(document.getElementById("fabForm").hidden?null:(fabEdit==null?null:String(fabEdit)))}};},
     applyRemote:function(ch){
       window.__ksApplying=true;
       try{
@@ -1145,12 +1226,22 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
           });
           fabPersist();
         }
+        [["cat","cats"],["wh","whs"]].forEach(function(p){
+          var c=LED[p[0]],m=ch[p[1]]||{},ks=Object.keys(m);if(!ks.length)return;
+          ks.forEach(function(id){
+            for(var i=c.arr.length-1;i>=0;i--)if(String(c.arr[i].id)===id)c.arr.splice(i,1);
+            if(m[id]!==null)c.arr.push(m[id]);
+          });
+          c.arr.sort(function(a,b){return String(a.id)<String(b.id)?-1:1;});
+          ledSave(c);
+        });
       }finally{window.__ksApplying=false;}
       try{
         if(isSplit()&&store.jobs[state.id]&&store.jobs[state.id]!==state){state=store.jobs[state.id];shownId=null;syncForm();}
         if(!listView.hidden)renderList();
         if(!fabView.hidden&&document.getElementById("fabForm").hidden)renderFab();
         if(!homeView.hidden)renderRemind();
+        ["cat","wh"].forEach(function(k){var c=LED[k],b=document.getElementById(c.box);if(!b.hidden&&!b.contains(document.activeElement))renderLed(c);});
       }catch(e){}
     }
   };
@@ -1332,6 +1423,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   var MK="khushfa-sync-meta",meta=null,fb=null,uid=null,email="",timer=null,unsubs=[],state="loading",lastErr="";
   try{meta=JSON.parse(localStorage.getItem(MK)||"null");}catch(e){}
   if(!meta||!meta.jobs||!meta.fabs)meta={jobs:{},fabs:{},uid:null};
+  meta.cats=meta.cats||{};meta.whs=meta.whs||{};
   function saveMeta(){try{localStorage.setItem(MK,JSON.stringify(meta));}catch(e){}}
   function hash(s){var h=5381,i=s.length;while(i)h=(h*33)^s.charCodeAt(--i);return (h>>>0).toString(36)+"."+s.length;}
   function strip(j,zero){var c=JSON.parse(JSON.stringify(j));(c.rooms||[]).forEach(function(r){(r.wins||[]).forEach(function(w){w.photos=[];});});if(zero)c.updated=0;return JSON.stringify(c);}
@@ -1410,6 +1502,18 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       var m=meta.fabs[id];if(m.del||seen[id])return;
       u=Date.now();put("fabs",id,{u:u,del:true,d:""});meta.fabs[id]={h:"",u:u,del:true};ch=true;
     });
+    [["cats"],["whs"]].forEach(function(p){
+      var col=p[0],arr=sn[col]||[],seen2={};
+      arr.forEach(function(f){
+        var id=String(f.id);seen2[id]=1;
+        var h=fh(f),m=meta[col][id];if(m&&!m.del&&m.h===h)return;
+        u=Date.now();put(col,id,{u:u,del:false,d:JSON.stringify(f)});meta[col][id]={h:h,u:u};ch=true;
+      });
+      Object.keys(meta[col]).forEach(function(id){
+        var m=meta[col][id];if(m.del||seen2[id])return;
+        u=Date.now();put(col,id,{u:u,del:true,d:""});meta[col][id]={h:"",u:u,del:true};ch=true;
+      });
+    });
     if(ch)saveMeta();
   }
   window.__ks=function(){if(window.__ksApplying)return;clearTimeout(timer);timer=setTimeout(push,1200);};
@@ -1432,13 +1536,13 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   /* ---------- pull (cloud -> local) ---------- */
   function onDocs(col,docs){
     if(!window.KAPP)return;
-    var sn=window.KAPP.snap(),ch={jobs:{},fabs:{}},us={},any=false;
+    var sn=window.KAPP.snap(),ch={jobs:{},fabs:{},cats:{},whs:{}},us={},any=false;
     docs.forEach(function(d){
       var id=d.id,x=d.data(),m=meta[col][id];
       if(col==="jobs"&&String(id).indexOf("pq-")===0){if(x&&window.KAPP&&window.KAPP.onPrint)window.KAPP.onPrint(id,x);return;}
       if(!x||typeof x.u!=="number")return;
       if(m&&m.u>=x.u)return;
-      var loc=col==="jobs"?sn.jobs[id]:findFab(sn.fabs,id);
+      var loc=col==="jobs"?sn.jobs[id]:findFab(sn[col],id);
       if(loc){
         var h=col==="jobs"?jh(loc):fh(loc);
         if(m){if(!m.del&&m.h!==h)return;}
@@ -1447,7 +1551,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
           else return;
         }
       }
-      if(sn.open[col==="jobs"?"job":"fab"]===id)return;
+      if((col==="jobs"?sn.open.job:col==="fabs"?sn.open.fab:null)===id)return;
       if(x.del){if(loc){ch[col][id]=null;any=true;}us[col+"|"+id]=x.u;return;}
       var o;try{o=JSON.parse(x.d);}catch(e){return;}
       ch[col][id]=o;us[col+"|"+id]=x.u;any=true;
@@ -1455,7 +1559,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     if(any)window.KAPP.applyRemote(ch);
     var sn2=window.KAPP.snap();
     Object.keys(us).forEach(function(k){
-      var p=k.split("|"),c=p[0],id=p.slice(1).join("|"),loc=c==="jobs"?sn2.jobs[id]:findFab(sn2.fabs,id);
+      var p=k.split("|"),c=p[0],id=p.slice(1).join("|"),loc=c==="jobs"?sn2.jobs[id]:findFab(sn2[c],id);
       meta[c][id]=loc?{h:(c==="jobs"?jh(loc):fh(loc)),u:us[k]}:{h:"",u:us[k],del:true};
     });
     saveMeta();
@@ -1463,7 +1567,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function listen(){
     unsubs.forEach(function(f){try{f();}catch(e){}});unsubs=[];
-    ["jobs","fabs"].forEach(function(col){
+    ["jobs","fabs","cats","whs"].forEach(function(col){
       unsubs.push(fb.onSnapshot(fb.collection(fb.db,"users",uid,col),function(s){
         var arr=[];s.docChanges().forEach(function(c){if(c.type!=="removed")arr.push(c.doc);});
         if(arr.length)onDocs(col,arr);
@@ -1482,7 +1586,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     A.onAuthStateChanged(auth,function(u){
       if(u){
         uid=u.uid;email=u.email||"";
-        if(meta.uid&&meta.uid!==uid)meta={jobs:{},fabs:{},uid:uid};
+        if(meta.uid&&meta.uid!==uid)meta={jobs:{},fabs:{},cats:{},whs:{},uid:uid};
         meta.uid=uid;saveMeta();
         listen();push();
       }else{
