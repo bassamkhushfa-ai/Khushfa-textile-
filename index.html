@@ -260,7 +260,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       <div id="catRows"></div>
     </section>
     <section class="job led" id="whBox" hidden>
-      <div class="bar noprint"><button type="button" id="whBack">→ رجوع</button></div>
+      <div class="bar noprint"><button type="button" id="whBack">→ رجوع</button><button type="button" id="whPrint">🖨️ طباعة</button></div>
       <h2 style="margin:12px 0 6px">ترحيل مستودع</h2>
       <div class="ledhead" style="grid-template-columns:1.3fr .8fr 1fr 36px"><span>اسم المادة ورقمها</span><span>عدد الأمتار</span><span>التاريخ</span><span></span></div>
       <div id="whRows"></div>
@@ -1073,6 +1073,22 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   document.getElementById("whOpen").addEventListener("click",function(){showLed(LED.wh);});
   document.getElementById("catBack").addEventListener("click",hideLed);
   document.getElementById("whBack").addEventListener("click",hideLed);
+  document.getElementById("whPrint").addEventListener("click",function(){
+    var rows=whs.filter(function(r){return r.name||r.m;});
+    if(!rows.length){alert("لا توجد مواد للطباعة");return;}
+    var h='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترحيل مستودع</title><style>'
+      +'body{font-family:Tahoma,Arial,sans-serif;margin:24px;color:#000}h1{font-size:20px;margin:0 0 4px}.d{font-size:13px;color:#444;margin-bottom:14px}'
+      +'table{width:100%;border-collapse:collapse;font-size:15px}th,td{border:1px solid #333;padding:8px 10px;text-align:right}th{background:#eee}td.n,th.n{width:44px;text-align:center}td.m,th.m{width:130px;text-align:center}'
+      +'tr{page-break-inside:avoid}</style></head><body><h1>ترحيل مستودع</h1><div class="d">'+new Date().toLocaleDateString("en-GB")+'</div>'
+      +'<table><thead><tr><th class="n">#</th><th>اسم المادة ورقمها</th><th class="m">عدد الأمتار</th></tr></thead><tbody>'
+      +rows.map(function(r,i){return '<tr><td class="n">'+(i+1)+'</td><td>'+esc(r.name||"")+'</td><td class="m">'+esc(r.m||"")+'</td></tr>';}).join("")
+      +'</tbody></table></body></html>';
+    var fr=document.createElement("iframe");
+    fr.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    document.body.appendChild(fr);
+    var d=fr.contentWindow.document;d.open();d.write(h);d.close();
+    setTimeout(function(){fr.contentWindow.focus();fr.contentWindow.print();setTimeout(function(){document.body.removeChild(fr);},1500);},300);
+  });
   document.getElementById("fabHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
 
   var fItemsCur=[];
