@@ -203,6 +203,10 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
 .led .ledhead span{font-size:12px;color:var(--mute)}
 .led .ledrow input{width:100%;min-width:0;box-sizing:border-box;padding:10px 8px;min-height:44px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit}
 .led .ledrow .ledx{position:static;width:34px;height:34px;min-height:0;padding:0;flex:0 0 auto;border-radius:50%;border:1px solid var(--danger);background:transparent;color:var(--danger);font-size:15px}
+.led .ledfold{display:flex;gap:6px;margin-bottom:8px;align-items:center}
+.led .ledfold .fopen{flex:1;text-align:right;min-height:48px;padding:10px 12px;border-radius:12px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-size:16px;position:static}
+.led .ledfold .fren{position:static;width:34px;height:34px;min-height:0;padding:0;border-radius:50%;border:1px solid rgba(128,128,128,.5);background:transparent;color:inherit;font-size:15px}
+.led .ledfold .ledx{position:static;width:34px;height:34px;min-height:0;padding:0;border-radius:50%;border:1px solid var(--danger);background:transparent;color:var(--danger);font-size:15px}
 </style>
 </head>
 <body>
@@ -260,10 +264,16 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       <div id="catRows"></div>
     </section>
     <section class="job led" id="whBox" hidden>
-      <div class="bar noprint"><button type="button" id="whBack">→ رجوع</button><button type="button" id="whPrint">🖨️ طباعة</button></div>
-      <h2 style="margin:12px 0 6px">ترحيل مستودع</h2>
-      <div class="ledhead" style="grid-template-columns:1.3fr .8fr 1fr 36px"><span>اسم المادة ورقمها</span><span>عدد الأمتار</span><span>التاريخ</span><span></span></div>
-      <div id="whRows"></div>
+      <div class="bar noprint"><button type="button" id="whBack">→ رجوع</button><button type="button" id="whPrint" hidden>🖨️ طباعة</button></div>
+      <h2 id="whTitle" style="margin:12px 0 6px">ترحيل مستودع</h2>
+      <div id="whFolderView">
+        <div class="bar noprint" style="margin-bottom:8px"><button type="button" class="primary" id="whNewFolder">+ مجلد جديد</button></div>
+        <div id="whFolderList"></div>
+      </div>
+      <div id="whRowsView" hidden>
+        <div class="ledhead" style="grid-template-columns:1.3fr .8fr 1fr 36px"><span>اسم المادة ورقمها</span><span>عدد الأمتار</span><span>التاريخ</span><span></span></div>
+        <div id="whRows"></div>
+      </div>
     </section>
     <div id="fabList"></div>
   </div>
@@ -1013,12 +1023,14 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   });
 
   /* ---------- catalog loans & warehouse transfers (auto-growing rows) ---------- */
-  var CKEY="khushfa-cat-v1",WKEY="khushfa-wh-v1",cats=[],whs=[];
+  var CKEY="khushfa-cat-v1",WKEY="khushfa-wh-v1",FKEY="khushfa-whf-v1",cats=[],whs=[],whf=[],curF=null,whView="folders";
   try{cats=JSON.parse(localStorage.getItem(CKEY)||"[]")||[];}catch(e){cats=[];}
   try{whs=JSON.parse(localStorage.getItem(WKEY)||"[]")||[];}catch(e){whs=[];}
+  try{whf=JSON.parse(localStorage.getItem(FKEY)||"[]")||[];}catch(e){whf=[];}
   var LED={
     cat:{key:CKEY,arr:cats,box:"catBox",rows:"catRows",cols:"1fr 1fr 36px",f:[{k:"name",ph:"اسم الكتلوك"},{k:"cust",ph:"الزبون ورقم الهاتف"}]},
-    wh:{key:WKEY,arr:whs,box:"whBox",rows:"whRows",cols:"1.3fr .8fr 1fr 36px",f:[{k:"name",ph:"اسم المادة ورقمها"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"},{k:"d",ph:"التاريخ",t:"date"}]}
+    whf:{key:FKEY,arr:whf,f:[]},
+    wh:{key:WKEY,arr:whs,box:"whBox",rows:"whRows",flt:function(r){return r.fid===curF;},mk:function(o){o.fid=curF;},cols:"1.3fr .8fr 1fr 36px",f:[{k:"name",ph:"اسم المادة ورقمها"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"},{k:"d",ph:"التاريخ",t:"date"}]}
   };
   function ledSave(c){try{localStorage.setItem(c.key,JSON.stringify(c.arr));}catch(e){}if(window.__ks)window.__ks();}
   function ledNewId(){return String(Date.now())+Math.random().toString(36).slice(2,6);}
@@ -1030,7 +1042,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function ledBlank(){return {id:ledNewId()};}
   function renderLed(c){
     c.arr.sort(function(a,b){return String(a.id)<String(b.id)?-1:1;});
-    document.getElementById(c.rows).innerHTML=c.arr.map(function(r){return ledRowHtml(c,r);}).join("")+ledRowHtml(c,ledBlank());
+    document.getElementById(c.rows).innerHTML=c.arr.filter(c.flt||function(){return true;}).map(function(r){return ledRowHtml(c,r);}).join("")+ledRowHtml(c,ledBlank());
   }
   function ledHas(c,row){return c.f.some(function(f){return (row.querySelector('[data-k="'+f.k+'"]').value||"").trim();});}
   function ledBind(c){
@@ -1040,7 +1052,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       var id=row.getAttribute("data-id"),has=ledHas(c,row),idx=-1;
       c.arr.forEach(function(r,i){if(r.id===id)idx=i;});
       if(has){
-        var o=idx>-1?c.arr[idx]:{id:id};
+        var o=idx>-1?c.arr[idx]:{id:id};if(idx<0&&c.mk)c.mk(o);
         c.f.forEach(function(f){o[f.k]=row.querySelector('[data-k="'+f.k+'"]').value.trim();});
         if(idx<0)c.arr.push(o);
         ledSave(c);
@@ -1068,18 +1080,70 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;
     document.getElementById(c.box).hidden=false;renderLed(c);window.scrollTo(0,0);
   }
+  function whMigrate(){
+    if(!whs.some(function(r){return !r.fid;}))return;
+    if(!whf.some(function(f){return f.id==="0legacy";})){whf.push({id:"0legacy",name:"ترحيلة سابقة"});ledSave(LED.whf);}
+    whs.forEach(function(r){if(!r.fid)r.fid="0legacy";});ledSave(LED.wh);
+  }
+  function renderFolders(){
+    var el=document.getElementById("whFolderList");
+    if(!whf.length){el.innerHTML='<p style="color:var(--mute)">لا توجد مجلدات بعد. اضغط «+ مجلد جديد».</p>';return;}
+    el.innerHTML=whf.slice().sort(function(a,b){return String(a.id)<String(b.id)?1:-1;}).map(function(f){
+      var n=whs.filter(function(r){return r.fid===f.id;}).length;
+      return '<div class="ledfold" data-id="'+esc(f.id)+'"><button type="button" class="fopen">📁 '+esc(f.name)+' <small>('+n+')</small></button><button type="button" class="fren" aria-label="تعديل الاسم">✎</button><button type="button" class="fdel ledx" aria-label="حذف المجلد">✕</button></div>';
+    }).join("");
+  }
+  function whShowFolders(){
+    whView="folders";curF=null;
+    document.getElementById("whFolderView").hidden=false;document.getElementById("whRowsView").hidden=true;
+    document.getElementById("whPrint").hidden=true;document.getElementById("whTitle").textContent="ترحيل مستودع";
+    renderFolders();window.scrollTo(0,0);
+  }
+  function whShowRows(id){
+    var f=null;whf.forEach(function(x){if(x.id===id)f=x;});if(!f)return;
+    whView="rows";curF=id;
+    document.getElementById("whFolderView").hidden=true;document.getElementById("whRowsView").hidden=false;
+    document.getElementById("whPrint").hidden=false;document.getElementById("whTitle").textContent="📁 "+f.name;
+    renderLed(LED.wh);window.scrollTo(0,0);
+  }
+  function whOpen(){
+    document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
+    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=false;
+    whMigrate();whShowFolders();
+  }
+  document.getElementById("whNewFolder").addEventListener("click",function(){
+    var nm=prompt("اسم المجلد (مثال: ترحيلة "+new Date().toLocaleDateString("en-GB")+")","ترحيلة "+new Date().toLocaleDateString("en-GB"));
+    if(nm===null)return;nm=nm.trim();if(!nm)return;
+    var f={id:ledNewId(),name:nm};whf.push(f);ledSave(LED.whf);whShowRows(f.id);
+  });
+  document.getElementById("whFolderList").addEventListener("click",function(e){
+    var row=e.target.closest(".ledfold");if(!row)return;
+    var id=row.getAttribute("data-id"),f=null;whf.forEach(function(x){if(x.id===id)f=x;});if(!f)return;
+    if(e.target.closest(".fopen")){whShowRows(id);}
+    else if(e.target.closest(".fren")){
+      var nm=prompt("اسم المجلد",f.name);if(nm===null)return;nm=nm.trim();if(!nm)return;
+      f.name=nm;ledSave(LED.whf);renderFolders();
+    }else if(e.target.closest(".fdel")){
+      twoStep("هل تريد حذف المجلد؟","سيتم حذف المجلد وكل المواد داخله نهائياً.",function(){
+        for(var i=whs.length-1;i>=0;i--)if(whs[i].fid===id)whs.splice(i,1);
+        whf.splice(whf.indexOf(f),1);ledSave(LED.wh);ledSave(LED.whf);renderFolders();
+      });
+    }
+  });
+  whMigrate();
   ledBind(LED.cat);ledBind(LED.wh);
   document.getElementById("catOpen").addEventListener("click",function(){showLed(LED.cat);});
-  document.getElementById("whOpen").addEventListener("click",function(){showLed(LED.wh);});
+  document.getElementById("whOpen").addEventListener("click",whOpen);
   document.getElementById("catBack").addEventListener("click",hideLed);
-  document.getElementById("whBack").addEventListener("click",hideLed);
+  document.getElementById("whBack").addEventListener("click",function(){if(whView==="rows")whShowFolders();else hideLed();});
   document.getElementById("whPrint").addEventListener("click",function(){
-    var rows=whs.filter(function(r){return r.name||r.m;});
+    var fo=null;whf.forEach(function(x){if(x.id===curF)fo=x;});
+    var rows=whs.filter(function(r){return r.fid===curF&&(r.name||r.m);});
     if(!rows.length){alert("لا توجد مواد للطباعة");return;}
     var h='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترحيل مستودع</title><style>'
       +'body{font-family:Tahoma,Arial,sans-serif;margin:24px;color:#000}h1{font-size:20px;margin:0 0 4px}.d{font-size:13px;color:#444;margin-bottom:14px}'
       +'table{width:100%;border-collapse:collapse;font-size:15px}th,td{border:1px solid #333;padding:8px 10px;text-align:right}th{background:#eee}td.n,th.n{width:44px;text-align:center}td.m,th.m{width:130px;text-align:center}'
-      +'tr{page-break-inside:avoid}</style></head><body><h1>ترحيل مستودع</h1><div class="d">'+new Date().toLocaleDateString("en-GB")+'</div>'
+      +'tr{page-break-inside:avoid}</style></head><body><h1>ترحيل مستودع'+(fo?' — '+esc(fo.name):'')+'</h1><div class="d">'+new Date().toLocaleDateString("en-GB")+'</div>'
       +'<table><thead><tr><th class="n">#</th><th>اسم المادة ورقمها</th><th class="m">عدد الأمتار</th></tr></thead><tbody>'
       +rows.map(function(r,i){return '<tr><td class="n">'+(i+1)+'</td><td>'+esc(r.name||"")+'</td><td class="m">'+esc(r.m||"")+'</td></tr>';}).join("")
       +'</tbody></table></body></html>';
@@ -1170,7 +1234,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function doBackup(){
     persist();fabPersist();
     allPhotos().catch(function(){return {};}).then(function(ph){
-      var data={app:"khushfa-measure",version:1,date:new Date().toISOString(),store:store,fabs:fabs,cats:cats,whs:whs,photos:ph};
+      var data={app:"khushfa-measure",version:1,date:new Date().toISOString(),store:store,fabs:fabs,cats:cats,whs:whs,whf:whf,photos:ph};
       var blob=new Blob([JSON.stringify(data)],{type:"application/json"});
       var name="khushfa-backup-"+ftoday()+".json";
       try{localStorage.setItem(BKKEY,ftoday());}catch(e){}
@@ -1199,7 +1263,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       });
       var have={};fabs.forEach(function(f){have[f.id]=1;});
       (data.fabs||[]).forEach(function(f){if(!have[f.id])fabs.push(f);});
-      [["cat",data.cats],["wh",data.whs]].forEach(function(p){var c=LED[p[0]],h={};c.arr.forEach(function(r){h[r.id]=1;});(p[1]||[]).forEach(function(r){if(r&&!h[r.id])c.arr.push(r);});ledSave(c);});
+      [["cat",data.cats],["wh",data.whs],["whf",data.whf]].forEach(function(p){var c=LED[p[0]],h={};c.arr.forEach(function(r){h[r.id]=1;});(p[1]||[]).forEach(function(r){if(r&&!h[r.id])c.arr.push(r);});ledSave(c);});
       var ph=data.photos||{},ids=Object.keys(ph);
       ids.reduce(function(p,id){return p.then(function(){return putPhoto(id,ph[id]);});},Promise.resolve())
         .catch(function(){})
@@ -1217,7 +1281,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   window.KAPP={
     onPrint:function(id,x){try{pqIn(id,x);}catch(e){}},
     isEmpty:function(j){try{return isEmpty(j);}catch(e){return false;}},
-    snap:function(){return {jobs:store.jobs,fabs:fabs,cats:cats,whs:whs,open:{job:(formView.hidden?null:(isSplit()&&!formView.contains(document.activeElement)?null:(state&&state.id))),fab:(document.getElementById("fabForm").hidden?null:(fabEdit==null?null:String(fabEdit)))}};},
+    snap:function(){return {jobs:store.jobs,fabs:fabs,cats:cats,whs:whs,whf:whf,open:{job:(formView.hidden?null:(isSplit()&&!formView.contains(document.activeElement)?null:(state&&state.id))),fab:(document.getElementById("fabForm").hidden?null:(fabEdit==null?null:String(fabEdit)))}};},
     applyRemote:function(ch){
       window.__ksApplying=true;
       try{
@@ -1242,7 +1306,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
           });
           fabPersist();
         }
-        [["cat","cats"],["wh","whs"]].forEach(function(p){
+        [["cat","cats"],["wh","whs"],["whf","whf"]].forEach(function(p){
           var c=LED[p[0]],m=ch[p[1]]||{},ks=Object.keys(m);if(!ks.length)return;
           ks.forEach(function(id){
             for(var i=c.arr.length-1;i>=0;i--)if(String(c.arr[i].id)===id)c.arr.splice(i,1);
@@ -1251,13 +1315,14 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
           c.arr.sort(function(a,b){return String(a.id)<String(b.id)?-1:1;});
           ledSave(c);
         });
+        whMigrate();
       }finally{window.__ksApplying=false;}
       try{
         if(isSplit()&&store.jobs[state.id]&&store.jobs[state.id]!==state){state=store.jobs[state.id];shownId=null;syncForm();}
         if(!listView.hidden)renderList();
         if(!fabView.hidden&&document.getElementById("fabForm").hidden)renderFab();
         if(!homeView.hidden)renderRemind();
-        ["cat","wh"].forEach(function(k){var c=LED[k],b=document.getElementById(c.box);if(!b.hidden&&!b.contains(document.activeElement))renderLed(c);});
+        var cb=document.getElementById("catBox"),wb=document.getElementById("whBox");if(!cb.hidden&&!cb.contains(document.activeElement))renderLed(LED.cat);if(!wb.hidden){if(whView==="folders")renderFolders();else if(!wb.contains(document.activeElement)){if(!whf.some(function(f){return f.id===curF;}))whShowFolders();else renderLed(LED.wh);}}
       }catch(e){}
     }
   };
@@ -1439,7 +1504,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   var MK="khushfa-sync-meta",meta=null,fb=null,uid=null,email="",timer=null,unsubs=[],state="loading",lastErr="";
   try{meta=JSON.parse(localStorage.getItem(MK)||"null");}catch(e){}
   if(!meta||!meta.jobs||!meta.fabs)meta={jobs:{},fabs:{},uid:null};
-  meta.cats=meta.cats||{};meta.whs=meta.whs||{};
+  meta.cats=meta.cats||{};meta.whs=meta.whs||{};meta.whf=meta.whf||{};
   function saveMeta(){try{localStorage.setItem(MK,JSON.stringify(meta));}catch(e){}}
   function hash(s){var h=5381,i=s.length;while(i)h=(h*33)^s.charCodeAt(--i);return (h>>>0).toString(36)+"."+s.length;}
   function strip(j,zero){var c=JSON.parse(JSON.stringify(j));(c.rooms||[]).forEach(function(r){(r.wins||[]).forEach(function(w){w.photos=[];});});if(zero)c.updated=0;return JSON.stringify(c);}
@@ -1518,7 +1583,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       var m=meta.fabs[id];if(m.del||seen[id])return;
       u=Date.now();put("fabs",id,{u:u,del:true,d:""});meta.fabs[id]={h:"",u:u,del:true};ch=true;
     });
-    [["cats"],["whs"]].forEach(function(p){
+    [["cats"],["whs"],["whf"]].forEach(function(p){
       var col=p[0],arr=sn[col]||[],seen2={};
       arr.forEach(function(f){
         var id=String(f.id);seen2[id]=1;
@@ -1552,7 +1617,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   /* ---------- pull (cloud -> local) ---------- */
   function onDocs(col,docs){
     if(!window.KAPP)return;
-    var sn=window.KAPP.snap(),ch={jobs:{},fabs:{},cats:{},whs:{}},us={},any=false;
+    var sn=window.KAPP.snap(),ch={jobs:{},fabs:{},cats:{},whs:{},whf:{}},us={},any=false;
     docs.forEach(function(d){
       var id=d.id,x=d.data(),m=meta[col][id];
       if(col==="jobs"&&String(id).indexOf("pq-")===0){if(x&&window.KAPP&&window.KAPP.onPrint)window.KAPP.onPrint(id,x);return;}
@@ -1583,7 +1648,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function listen(){
     unsubs.forEach(function(f){try{f();}catch(e){}});unsubs=[];
-    ["jobs","fabs","cats","whs"].forEach(function(col){
+    ["jobs","fabs","cats","whs","whf"].forEach(function(col){
       unsubs.push(fb.onSnapshot(fb.collection(fb.db,"users",uid,col),function(s){
         var arr=[];s.docChanges().forEach(function(c){if(c.type!=="removed")arr.push(c.doc);});
         if(arr.length)onDocs(col,arr);
@@ -1602,7 +1667,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     A.onAuthStateChanged(auth,function(u){
       if(u){
         uid=u.uid;email=u.email||"";
-        if(meta.uid&&meta.uid!==uid)meta={jobs:{},fabs:{},cats:{},whs:{},uid:uid};
+        if(meta.uid&&meta.uid!==uid)meta={jobs:{},fabs:{},cats:{},whs:{},whf:{},uid:uid};
         meta.uid=uid;saveMeta();
         listen();push();
       }else{
