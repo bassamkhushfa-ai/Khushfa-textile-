@@ -280,31 +280,42 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     <section class="job" id="sofaBox" hidden>
       <div class="bar noprint"><button type="button" id="sofaBack">→ رجوع</button></div>
       <h2 style="margin:12px 0 6px">تجربة القماش على الكنبة</h2>
-      <div id="sofaStage"><svg id="sofaSvg" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto;display:block;border-radius:14px;background:#EDE7DF">
-        <defs>
-          <pattern id="sofaPat" patternUnits="userSpaceOnUse" x="0" y="0" width="40" height="40"></pattern>
-          <linearGradient id="sfLight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".34"/></linearGradient>
-          <linearGradient id="sfSide" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".25" stop-color="#000" stop-opacity="0"/><stop offset=".75" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
-          <radialGradient id="sfFloor"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
-        </defs>
-        <rect x="0" y="318" width="600" height="82" fill="#D9D0C4"/>
-        <ellipse cx="300" cy="352" rx="285" ry="24" fill="url(#sfFloor)"/>
-        <g fill="#4A3426"><rect x="82" y="326" width="16" height="30" rx="4"/><rect x="502" y="326" width="16" height="30" rx="4"/></g>
-        <g stroke="rgba(0,0,0,.38)" stroke-width="2"><rect x="70" y="62" width="460" height="170" rx="46" fill="url(#sofaPat)"/><rect x="70" y="62" width="460" height="170" rx="46" fill="url(#sfLight)" stroke="none"/><rect x="62" y="282" width="476" height="50" rx="12" fill="url(#sofaPat)"/><rect x="62" y="282" width="476" height="50" rx="12" fill="url(#sfLight)" stroke="none"/><rect x="116" y="88" width="178" height="128" rx="34" fill="url(#sofaPat)"/><rect x="116" y="88" width="178" height="128" rx="34" fill="url(#sfLight)" stroke="none"/><rect x="306" y="88" width="178" height="128" rx="34" fill="url(#sofaPat)"/><rect x="306" y="88" width="178" height="128" rx="34" fill="url(#sfLight)" stroke="none"/><rect x="112" y="214" width="188" height="78" rx="22" fill="url(#sofaPat)"/><rect x="112" y="214" width="188" height="78" rx="22" fill="url(#sfLight)" stroke="none"/><rect x="300" y="214" width="188" height="78" rx="22" fill="url(#sofaPat)"/><rect x="300" y="214" width="188" height="78" rx="22" fill="url(#sfLight)" stroke="none"/><rect x="28" y="150" width="96" height="182" rx="38" fill="url(#sofaPat)"/><rect x="28" y="150" width="96" height="182" rx="38" fill="url(#sfSide)" stroke="none"/><rect x="28" y="150" width="96" height="182" rx="38" fill="url(#sfLight)" stroke="none"/><rect x="476" y="150" width="96" height="182" rx="38" fill="url(#sofaPat)"/><rect x="476" y="150" width="96" height="182" rx="38" fill="url(#sfSide)" stroke="none"/><rect x="476" y="150" width="96" height="182" rx="38" fill="url(#sfLight)" stroke="none"/></g>
-        <text id="sofaHint" x="300" y="388" text-anchor="middle" font-size="15" fill="#6b6258" font-family="Tahoma,Arial,sans-serif">ارفع صورة قماش أو التقطها لتظهر على الكنبة</text>
-      </svg></div>
-      <div class="bar noprint">
-        <button type="button" class="primary" id="sofaCam">📷 التقاط صورة</button>
-        <button type="button" id="sofaGal">🖼️ من المعرض</button>
+      <div id="sofaScenes" class="noprint" style="display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px"></div>
+      <div id="sofaEmpty" style="padding:26px 14px;text-align:center;border:2px dashed var(--line);border-radius:14px;color:var(--mute);line-height:1.8">اختر صورة غرفة فيها كنبة (من المعرض أو التقطها بالكاميرا)، ثم اضغط على الكنبة ليحدّدها التطبيق.</div>
+      <div id="sofaStage"><canvas id="sofaCv" hidden style="width:100%;height:auto;display:block;border-radius:14px;touch-action:manipulation;background:#E6DDD0"></canvas></div>
+      <div class="bar noprint" style="margin-top:10px">
+        <button type="button" id="sofaPickCam">📷 التقاط صورة كنبة</button>
+        <button type="button" id="sofaPickGal">🖼️ صورة كنبة من المعرض</button>
       </div>
-      <div class="noprint" style="margin-top:12px"><label for="sofaScale">حجم نقشة القماش</label><input type="range" id="sofaScale" min="60" max="360" value="160" style="width:100%"></div>
-      <div class="bar noprint">
-        <button type="button" id="sofaRot">↻ تدوير القماش</button>
-        <button type="button" id="sofaSave">💾 حفظ الصورة</button>
-        <button type="button" id="sofaReset">إعادة</button>
+      <div id="sofaTools" class="noprint" hidden>
+        <div class="bar">
+          <button type="button" id="sofaToolWand">🪄 تحديد ذكي</button>
+          <button type="button" id="sofaToolAdd">🖌️ فرشاة +</button>
+          <button type="button" id="sofaToolErase">🧽 ممحاة</button>
+        </div>
+        <div style="margin-top:10px"><label for="sofaTol">حساسية التحديد الذكي</label><input type="range" id="sofaTol" min="8" max="90" value="28" style="width:100%"></div>
+        <div style="margin-top:6px"><label for="sofaBr">حجم الفرشاة / الممحاة</label><input type="range" id="sofaBr" min="6" max="70" value="26" style="width:100%"></div>
+        <div class="bar">
+          <button type="button" id="sofaUndo">↶ تراجع</button>
+          <button type="button" id="sofaClear">مسح التحديد</button>
+          <button type="button" id="sofaView">👁️ عرض التحديد</button>
+        </div>
+        <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+        <div class="bar">
+          <button type="button" class="primary" id="sofaFabCam">📷 التقاط صورة القماش</button>
+          <button type="button" id="sofaFabGal">🖼️ قماش من المعرض</button>
+        </div>
+        <div style="margin-top:10px"><label for="sofaScale">حجم نقشة القماش</label><input type="range" id="sofaScale" min="40" max="400" value="140" style="width:100%"></div>
+        <div class="bar">
+          <button type="button" id="sofaRot">↻ تدوير القماش</button>
+          <button type="button" id="sofaSaveScene">⭐ حفظ هذه الكنبة في التطبيق</button>
+          <button type="button" id="sofaSave">💾 حفظ الصورة</button>
+        </div>
       </div>
-      <input type="file" id="sofaFileG" accept="image/*" hidden>
-      <input type="file" id="sofaFileC" accept="image/*" capture="environment" hidden>
+      <input type="file" id="sofaBaseG" accept="image/*" hidden>
+      <input type="file" id="sofaBaseC" accept="image/*" capture="environment" hidden>
+      <input type="file" id="sofaFabG" accept="image/*" hidden>
+      <input type="file" id="sofaFabC" accept="image/*" capture="environment" hidden>
     </section>
     <div id="fabList"></div>
   </div>
@@ -1268,79 +1279,260 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   });
   document.getElementById("fabHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
 
-  /* ---------- sofa fabric try-on ---------- */
+  /* ---------- sofa fabric try-on (real photo + smart selection) ---------- */
   (function(){
-    var NS="http://www.w3.org/2000/svg",XL="http://www.w3.org/1999/xlink";
-    var pat=document.getElementById("sofaPat"),svg=document.getElementById("sofaSvg"),hint=document.getElementById("sofaHint");
-    var scale=160,rot=0,photo=null;
-    function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
-    function drawPat(){
-      while(pat.firstChild)pat.removeChild(pat.firstChild);
-      if(!photo){
-        pat.setAttribute("width",40);pat.setAttribute("height",40);pat.removeAttribute("patternTransform");
-        pat.appendChild(el("rect",{width:40,height:40,fill:"#C9B79F"}));
-        pat.appendChild(el("path",{d:"M0 40L40 0",stroke:"#B9A68C","stroke-width":2}));
-        return;
-      }
-      var S=scale;
-      pat.setAttribute("width",S*2);pat.setAttribute("height",S*2);
-      pat.setAttribute("patternTransform","rotate("+rot+")");
-      /* mirrored 2x2 tile so the photo edges never show a seam */
-      [[0,0,1,1],[S,0,-1,1],[0,S,1,-1],[S,S,-1,-1]].forEach(function(t){
-        var g=el("g",{transform:"translate("+(t[2]<0?t[0]+S:t[0])+" "+(t[3]<0?t[1]+S:t[1])+") scale("+t[2]+" "+t[3]+")"});
-        var im=el("image",{x:0,y:0,width:S,height:S,preserveAspectRatio:"xMidYMid slice",href:photo});
-        im.setAttributeNS(XL,"xlink:href",photo);
-        g.appendChild(im);pat.appendChild(g);
-      });
-    }
-    function load(file){
+    function $(i){return document.getElementById(i);}
+    var cv=$("sofaCv"),ctx=cv.getContext("2d");
+    var bc=document.createElement("canvas"),bctx=bc.getContext("2d");
+    var W=0,H=0,base=null,lum=null,mask=null,soft=null,meanL=128,outD=null;
+    var fimg=null,scale=140,rot=0,tool="wand",view="sel",undo=[],curId=null,painting=false,last=null;
+    var fillD=null;
+    /* ----- files ----- */
+    function readImg(file,max,cb){
       if(!file)return;
       var fr=new FileReader();
-      fr.onload=function(){
-        var im=new Image();
-        im.onload=function(){
-          var m=700,w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,m/Math.max(w,h));
-          var c=document.createElement("canvas");c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
-          c.getContext("2d").drawImage(im,0,0,c.width,c.height);
-          photo=c.toDataURL("image/jpeg",.88);hint.style.display="none";drawPat();
-        };
-        im.onerror=function(){alert("تعذّر فتح الصورة");};
-        im.src=fr.result;
-      };
+      fr.onload=function(){var im=new Image();im.onload=function(){cb(im);};im.onerror=function(){alert("تعذّر فتح الصورة");};im.src=fr.result;};
       fr.readAsDataURL(file);
     }
-    function pick(id){var f=document.getElementById(id);f.value="";f.click();}
-    document.getElementById("sofaOpen").addEventListener("click",function(){
-      document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
-      document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("sofaBox").hidden=false;
-      window.scrollTo(0,0);
+    function pick(id){var f=$(id);f.value="";f.click();}
+    /* ----- base photo ----- */
+    function setBase(im,keepMask){
+      var m=1000,k=Math.min(1,m/Math.max(im.naturalWidth||im.width,im.naturalHeight||im.height));
+      W=Math.max(1,Math.round((im.naturalWidth||im.width)*k));H=Math.max(1,Math.round((im.naturalHeight||im.height)*k));
+      bc.width=W;bc.height=H;bctx.drawImage(im,0,0,W,H);
+      base=bctx.getImageData(0,0,W,H);
+      lum=new Uint8Array(W*H);
+      for(var i=0,j=0;i<W*H;i++,j+=4)lum[i]=(base.data[j]*299+base.data[j+1]*587+base.data[j+2]*114)/1000;
+      mask=new Uint8Array(W*H);soft=new Uint8Array(W*H);undo=[];sm=null;
+      outD=ctx.createImageData(W,H);cv.width=W;cv.height=H;fillD=null;
+      cv.hidden=false;$("sofaEmpty").hidden=true;$("sofaTools").hidden=false;
+      view="sel";curId=null;updView();render();
+    }
+    /* ----- mask maths ----- */
+    function blur(src,r){
+      var tmp=new Uint8Array(W*H),out=new Uint8Array(W*H),x,y,s,n=2*r+1;
+      for(y=0;y<H;y++){s=0;var o=y*W;
+        for(x=-r;x<=r;x++)s+=src[o+Math.min(W-1,Math.max(0,x))];
+        for(x=0;x<W;x++){tmp[o+x]=s/n;s+=src[o+Math.min(W-1,x+r+1)]-src[o+Math.max(0,x-r)];}}
+      for(x=0;x<W;x++){s=0;
+        for(y=-r;y<=r;y++)s+=tmp[Math.min(H-1,Math.max(0,y))*W+x];
+        for(y=0;y<H;y++){out[y*W+x]=s/n;s+=tmp[Math.min(H-1,y+r+1)*W+x]-tmp[Math.max(0,y-r)*W+x];}}
+      return out;
+    }
+    function recalc(){
+      soft=blur(mask,2);
+      var s=0,c=0;for(var i=0;i<W*H;i++)if(mask[i]){s+=lum[i];c++;}
+      meanL=c?Math.max(30,s/c):128;
+    }
+    function snap(){undo.push(mask.slice());if(undo.length>10)undo.shift();}
+    var sm=null;
+    function smooth(){
+      var d=base.data,o=new Uint8ClampedArray(d.length),x,y,c,dx,dy;
+      for(y=0;y<H;y++)for(x=0;x<W;x++){
+        var sr=0,sg=0,sb=0,n=0;
+        for(dy=-1;dy<=1;dy++)for(dx=-1;dx<=1;dx++){var xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=W||yy>=H)continue;var q=(yy*W+xx)*4;sr+=d[q];sg+=d[q+1];sb+=d[q+2];n++;}
+        var p=(y*W+x)*4;o[p]=sr/n;o[p+1]=sg/n;o[p+2]=sb/n;o[p+3]=255;
+      }
+      sm=o;
+    }
+    function wand(px,py,T){
+      if(!sm)smooth();
+      var d=sm,x0=Math.max(0,px-3),x1=Math.min(W-1,px+3),y0=Math.max(0,py-3),y1=Math.min(H-1,py+3),sr=0,sg=0,sb=0,n=0,x,y;
+      for(y=y0;y<=y1;y++)for(x=x0;x<=x1;x++){var q=(y*W+x)*4;sr+=d[q];sg+=d[q+1];sb+=d[q+2];n++;}
+      sr/=n;sg/=n;sb/=n;
+      var sY=.299*sr+.587*sg+.114*sb,sCb=sb-sY,sCr=sr-sY,T2=T*T,E=Math.max(8,T*.45),E2=E*E,cnt=0;
+      var seen=new Uint8Array(W*H),st=new Int32Array(W*H),sp=0;
+      st[sp++]=py*W+px;seen[py*W+px]=1;
+      function step(p,pn){
+        if(seen[pn])return;seen[pn]=1;
+        var q=p*4,r=d[q],g=d[q+1],b=d[q+2],qn=pn*4,r2=d[qn],g2=d[qn+1],b2=d[qn+2];
+        var Y=.299*r2+.587*g2+.114*b2,dY=Y-sY,dB=(b2-Y)-sCb,dR=(r2-Y)-sCr;
+        if(.45*dY*dY+dB*dB+dR*dR>T2)return;
+        var er=r2-r,eg=g2-g,eb=b2-b;
+        if((er*er+eg*eg+eb*eb)/3>E2)return;
+        st[sp++]=pn;
+      }
+      while(sp){
+        var p=st[--sp];mask[p]=255;cnt++;
+        var cx=p%W,cy=(p-cx)/W;
+        if(cx>0)step(p,p-1);if(cx<W-1)step(p,p+1);if(cy>0)step(p,p-W);if(cy<H-1)step(p,p+W);
+      }
+      return cnt;
+    }
+    function dab(cx,cy,r,v){
+      var x0=Math.max(0,Math.floor(cx-r)),x1=Math.min(W-1,Math.ceil(cx+r)),y0=Math.max(0,Math.floor(cy-r)),y1=Math.min(H-1,Math.ceil(cy+r)),r2=r*r;
+      for(var y=y0;y<=y1;y++)for(var x=x0;x<=x1;x++){var dx=x-cx,dy=y-cy;if(dx*dx+dy*dy<=r2)mask[y*W+x]=v;}
+    }
+    function stroke(a,b){
+      var r=+$("sofaBr").value*W/900,v=tool==="erase"?0:255,dx=b.x-a.x,dy=b.y-a.y,len=Math.sqrt(dx*dx+dy*dy),n=Math.max(1,Math.ceil(len/Math.max(1,r/2)));
+      for(var i=0;i<=n;i++)dab(a.x+dx*i/n,a.y+dy*i/n,r,v);
+    }
+    /* ----- fabric ----- */
+    function buildFill(){
+      if(!fimg||!W)return;
+      var S=Math.max(24,Math.round(scale/900*W)),t=document.createElement("canvas");t.width=t.height=S*2;
+      var tc=t.getContext("2d");
+      [[0,0,1,1],[S,0,-1,1],[0,S,1,-1],[S,S,-1,-1]].forEach(function(a){
+        tc.save();tc.translate(a[2]<0?a[0]+S:a[0],a[3]<0?a[1]+S:a[1]);tc.scale(a[2],a[3]);
+        var iw=fimg.width,ih=fimg.height,s=Math.min(iw,ih);
+        tc.drawImage(fimg,(iw-s)/2,(ih-s)/2,s,s,0,0,S,S);tc.restore();
+      });
+      var f=document.createElement("canvas");f.width=W;f.height=H;var fc=f.getContext("2d");
+      fc.save();fc.translate(W/2,H/2);fc.rotate(rot*Math.PI/180);fc.translate(-W/2,-H/2);
+      fc.fillStyle=fc.createPattern(t,"repeat");fc.fillRect(-W,-H,W*3,H*3);fc.restore();
+      fillD=fc.getImageData(0,0,W,H);
+    }
+    /* ----- render ----- */
+    function render(){
+      if(!base)return;
+      var bd=base.data,od=outD.data,N=W*H,i,q;
+      if(view==="res"&&fimg){
+        if(!fillD)buildFill();
+        var fd=fillD.data,inv=1/meanL;
+        for(i=0;i<N;i++){
+          q=i*4;var a=soft[i];
+          if(!a){od[q]=bd[q];od[q+1]=bd[q+1];od[q+2]=bd[q+2];od[q+3]=255;continue;}
+          var f=lum[i]*inv;if(f<.22)f=.22;else if(f>1.75)f=1.75;
+          var al=a/255,r=fd[q]*f,g=fd[q+1]*f,b=fd[q+2]*f;
+          if(r>255)r=255;if(g>255)g=255;if(b>255)b=255;
+          od[q]=bd[q]+(r-bd[q])*al;od[q+1]=bd[q+1]+(g-bd[q+1])*al;od[q+2]=bd[q+2]+(b-bd[q+2])*al;od[q+3]=255;
+        }
+      }else{
+        for(i=0;i<N;i++){
+          q=i*4;
+          if(mask[i]){od[q]=bd[q]*.55+255*.45;od[q+1]=bd[q+1]*.55+40*.45;od[q+2]=bd[q+2]*.55+60*.45;}
+          else{od[q]=bd[q];od[q+1]=bd[q+1];od[q+2]=bd[q+2];}
+          od[q+3]=255;
+        }
+      }
+      ctx.putImageData(outD,0,0);
+    }
+    var raf=0;function later(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;render();});}
+    function updView(){
+      $("sofaView").textContent=view==="res"?"👁️ عرض التحديد":"👁️ عرض النتيجة";
+      ["Wand","Add","Erase"].forEach(function(n){var b=$("sofaTool"+n);b.style.outline=(view==="sel"&&tool===n.toLowerCase())?"3px solid var(--accent)":"";});
+    }
+    function setTool(t){tool=t;view="sel";updView();render();cv.style.touchAction=t==="wand"?"manipulation":"none";}
+    /* ----- pointer ----- */
+    function pos(e){var r=cv.getBoundingClientRect();return {x:Math.max(0,Math.min(W-1,(e.clientX-r.left)*W/r.width)),y:Math.max(0,Math.min(H-1,(e.clientY-r.top)*H/r.height))};}
+    cv.addEventListener("pointerdown",function(e){
+      if(!base||view!=="sel")return;
+      var p=pos(e);
+      if(tool==="wand"){snap();
+        var saved=mask.slice(),T=+$("sofaTol").value,ok=false;
+        for(var k=0;k<8;k++){
+          var c=wand(Math.floor(p.x),Math.floor(p.y),T);
+          if(c<=W*H*.45){ok=true;break;}
+          mask.set(saved);T*=.8;
+        }
+        if(!ok){undo.pop();alert("التحديد كبير جداً. جرّب تقليل الحساسية أو استخدم الفرشاة.");}
+        recalc();render();return;}
+      snap();painting=true;last=p;try{cv.setPointerCapture(e.pointerId);}catch(x){}
+      stroke(p,p);render();e.preventDefault();
     });
-    document.getElementById("sofaBack").addEventListener("click",hideLed);
-    document.getElementById("sofaCam").addEventListener("click",function(){pick("sofaFileC");});
-    document.getElementById("sofaGal").addEventListener("click",function(){pick("sofaFileG");});
-    document.getElementById("sofaFileC").addEventListener("change",function(){load(this.files&&this.files[0]);});
-    document.getElementById("sofaFileG").addEventListener("change",function(){load(this.files&&this.files[0]);});
-    document.getElementById("sofaScale").addEventListener("input",function(){scale=+this.value;drawPat();});
-    document.getElementById("sofaRot").addEventListener("click",function(){rot=(rot+90)%360;drawPat();});
-    document.getElementById("sofaReset").addEventListener("click",function(){photo=null;rot=0;scale=160;document.getElementById("sofaScale").value=160;hint.style.display="";drawPat();});
-    document.getElementById("sofaSave").addEventListener("click",function(){
-      if(!photo){alert("اختر صورة قماش أولاً");return;}
-      var xml=new XMLSerializer().serializeToString(svg),im=new Image();
-      im.onload=function(){
-        var c=document.createElement("canvas");c.width=1200;c.height=800;
-        c.getContext("2d").drawImage(im,0,0,1200,800);
-        c.toBlob(function(b){
-          if(!b){alert("تعذّر حفظ الصورة");return;}
-          var file=null;try{file=new File([b],"khushfa-sofa.png",{type:"image/png"});}catch(e){}
-          if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file]}).catch(function(){});return;}
-          var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="khushfa-sofa.png";document.body.appendChild(a);a.click();
-          setTimeout(function(){URL.revokeObjectURL(a.href);document.body.removeChild(a);},1500);
-        },"image/png");
-      };
-      im.onerror=function(){alert("تعذّر حفظ الصورة");};
-      im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);
+    cv.addEventListener("pointermove",function(e){if(!painting)return;var p=pos(e);stroke(last,p);last=p;later();e.preventDefault();});
+    function up(){if(!painting)return;painting=false;recalc();render();}
+    cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
+    /* ----- scenes in IndexedDB (stay on this phone) ----- */
+    function db(cb){
+      try{var rq=indexedDB.open("khushfa-sofa",1);
+        rq.onupgradeneeded=function(){rq.result.createObjectStore("scenes",{keyPath:"id"});};
+        rq.onsuccess=function(){cb(rq.result);};rq.onerror=function(){cb(null);};
+      }catch(e){cb(null);}
+    }
+    function scenes(){
+      db(function(d){
+        var box=$("sofaScenes");if(!d){box.innerHTML="";return;}
+        var rq=d.transaction("scenes").objectStore("scenes").getAll();
+        rq.onsuccess=function(){
+          var h="";
+          (rq.result||[]).sort(function(a,b){return a.id<b.id?-1:1;}).forEach(function(s){
+            h+='<div style="position:relative;flex:0 0 auto" data-id="'+esc(s.id)+'"><button type="button" class="sc-open" style="padding:0;width:96px;height:72px;border-radius:12px;overflow:hidden;border:2px solid '+(s.id===curId?'var(--accent)':'var(--line)')+'"><img alt="" src="'+s.thumb+'" style="width:100%;height:100%;object-fit:cover;display:block"></button><button type="button" class="sc-del" aria-label="حذف" style="position:absolute;top:2px;left:2px;width:24px;height:24px;min-height:0;padding:0;border-radius:50%;border:1px solid var(--danger);background:var(--card);color:var(--danger);font-size:12px">✕</button></div>';
+          });
+          box.innerHTML=h;
+        };
+      });
+    }
+    $("sofaScenes").addEventListener("click",function(e){
+      var w=e.target.closest("[data-id]");if(!w)return;var id=w.getAttribute("data-id");
+      if(e.target.closest(".sc-del")){
+        twoStep("هل تريد حذف هذه الكنبة؟","سيتم حذف صورة الكنبة المحفوظة من التطبيق.",function(){
+          db(function(d){if(!d)return;var t=d.transaction("scenes","readwrite");t.objectStore("scenes").delete(id);t.oncomplete=function(){if(curId===id)curId=null;scenes();};});
+        });
+      }else if(e.target.closest(".sc-open")){
+        db(function(d){
+          if(!d)return;var rq=d.transaction("scenes").objectStore("scenes").get(id);
+          rq.onsuccess=function(){
+            var s=rq.result;if(!s)return;var im=new Image();
+            im.onload=function(){
+              setBase(im);
+              if(s.mask&&s.mask.length===W*H){mask.set(s.mask);recalc();}
+              curId=id;view=fimg?"res":"sel";updView();render();scenes();
+            };
+            im.src=s.img;
+          };
+        });
+      }
     });
-    drawPat();
+    $("sofaSaveScene").addEventListener("click",function(){
+      if(!base){return;}
+      var count=0;for(var i=0;i<W*H;i++)if(mask[i])count++;
+      if(count<200){alert("حدّد الكنبة أولاً بالضغط عليها.");return;}
+      var th=document.createElement("canvas");th.width=192;th.height=Math.max(1,Math.round(192*H/W));th.getContext("2d").drawImage(bc,0,0,th.width,th.height);
+      var rec={id:curId||String(Date.now()),img:bc.toDataURL("image/jpeg",.9),mask:mask.slice(),thumb:th.toDataURL("image/jpeg",.7)};
+      db(function(d){
+        if(!d){alert("تعذّر الحفظ على هذا الجهاز");return;}
+        var t=d.transaction("scenes","readwrite");t.objectStore("scenes").put(rec);
+        t.oncomplete=function(){curId=rec.id;scenes();alert("تم حفظ الكنبة في التطبيق، وستجدها في الأعلى.");};
+        t.onerror=function(){alert("تعذّر الحفظ");};
+      });
+    });
+    /* ----- wiring ----- */
+    $("sofaOpen").addEventListener("click",function(){
+      $("fabForm").hidden=true;$("fabQ").hidden=true;$("fabList").hidden=true;$("catBox").hidden=true;$("whBox").hidden=true;$("sofaBox").hidden=false;
+      scenes();window.scrollTo(0,0);
+    });
+    $("sofaBack").addEventListener("click",hideLed);
+    $("sofaPickCam").addEventListener("click",function(){pick("sofaBaseC");});
+    $("sofaPickGal").addEventListener("click",function(){pick("sofaBaseG");});
+    function onBase(){readImg(this.files&&this.files[0],1000,function(im){setBase(im);});}
+    $("sofaBaseC").addEventListener("change",onBase);$("sofaBaseG").addEventListener("change",onBase);
+    $("sofaFabCam").addEventListener("click",function(){pick("sofaFabC");});
+    $("sofaFabGal").addEventListener("click",function(){pick("sofaFabG");});
+    function onFab(){readImg(this.files&&this.files[0],700,function(im){
+      var m=700,k=Math.min(1,m/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement("canvas");
+      c.width=Math.max(1,Math.round(im.naturalWidth*k));c.height=Math.max(1,Math.round(im.naturalHeight*k));
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);fimg=c;fillD=null;
+      var any=false;for(var i=0;i<W*H;i++)if(mask[i]){any=true;break;}
+      view=any?"res":"sel";updView();render();
+      if(!any)alert("اضغط على الكنبة أولاً ليحدّدها التطبيق، ثم اضغط «عرض النتيجة».");
+    });}
+    $("sofaFabC").addEventListener("change",onFab);$("sofaFabG").addEventListener("change",onFab);
+    $("sofaToolWand").addEventListener("click",function(){setTool("wand");});
+    $("sofaToolAdd").addEventListener("click",function(){setTool("add");});
+    $("sofaToolErase").addEventListener("click",function(){setTool("erase");});
+    $("sofaUndo").addEventListener("click",function(){if(!undo.length)return;mask=undo.pop();recalc();render();});
+    $("sofaClear").addEventListener("click",function(){if(!base)return;snap();mask=new Uint8Array(W*H);recalc();view="sel";updView();render();});
+    $("sofaView").addEventListener("click",function(){
+      if(!base)return;
+      if(view==="sel"){if(!fimg){alert("اختر صورة القماش أولاً.");return;}view="res";}else view="sel";
+      updView();render();
+    });
+    $("sofaScale").addEventListener("input",function(){scale=+this.value;fillD=null;if(view==="res")later();});
+    $("sofaRot").addEventListener("click",function(){rot=(rot+90)%360;fillD=null;if(fimg){view="res";updView();}render();});
+    $("sofaSave").addEventListener("click",function(){
+      if(!base){return;}
+      if(!fimg){alert("اختر صورة القماش أولاً.");return;}
+      view="res";updView();render();
+      cv.toBlob(function(b){
+        if(!b){alert("تعذّر حفظ الصورة");return;}
+        var file=null;try{file=new File([b],"khushfa-sofa.jpg",{type:"image/jpeg"});}catch(e){}
+        if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file]}).catch(function(){});return;}
+        var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="khushfa-sofa.jpg";document.body.appendChild(a);a.click();
+        setTimeout(function(){URL.revokeObjectURL(a.href);document.body.removeChild(a);},1500);
+      },"image/jpeg",.92);
+    });
+    updView();
   })();
 
   var fItemsCur=[];
