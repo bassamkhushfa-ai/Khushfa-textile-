@@ -238,6 +238,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   <div id="fabView" hidden>
     <div class="bar noprint"><button type="button" id="fabHome" aria-label="الرئيسية" style="flex:0 0 56px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></button><button type="button" class="primary" id="fabNew">+ زبون جديد</button><button type="button" id="catOpen">📖 إعارة كتلوك</button><button type="button" id="whOpen">📦 ترحيل مستودع</button></div>
     <h2 class="sub" style="margin:10px 0">أقمشة كنب - تشكيلات</h2>
+    <div class="bar noprint" style="margin:0 0 10px"><button type="button" id="sofaOpen">🛋️ تجربة القماش على الكنبة</button></div>
     <input id="fabQ" type="search" placeholder="بحث: زبون أو مادة أو رقم" style="width:100%;box-sizing:border-box;padding:10px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit">
     <section class="job" id="fabForm" hidden>
       <div class="fgrid">
@@ -271,9 +272,38 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         <div id="whFolderList"></div>
       </div>
       <div id="whRowsView" hidden>
-        <div class="ledhead" style="grid-template-columns:1.3fr .8fr 1fr 36px"><span>اسم المادة ورقمها</span><span>عدد الأمتار</span><span>التاريخ</span><span></span></div>
+        <div class="ledhead" style="grid-template-columns:1.3fr .9fr .8fr 36px"><span>اسم المادة</span><span>رقم المادة</span><span>عدد الأمتار</span><span></span></div>
         <div id="whRows"></div>
       </div>
+    </section>
+    <section class="job" id="sofaBox" hidden>
+      <div class="bar noprint"><button type="button" id="sofaBack">→ رجوع</button></div>
+      <h2 style="margin:12px 0 6px">تجربة القماش على الكنبة</h2>
+      <div id="sofaStage"><svg id="sofaSvg" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="width:100%;height:auto;display:block;border-radius:14px;background:#EDE7DF">
+        <defs>
+          <pattern id="sofaPat" patternUnits="userSpaceOnUse" x="0" y="0" width="40" height="40"></pattern>
+          <linearGradient id="sfLight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".34"/></linearGradient>
+          <linearGradient id="sfSide" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".25" stop-color="#000" stop-opacity="0"/><stop offset=".75" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
+          <radialGradient id="sfFloor"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+        </defs>
+        <rect x="0" y="318" width="600" height="82" fill="#D9D0C4"/>
+        <ellipse cx="300" cy="352" rx="285" ry="24" fill="url(#sfFloor)"/>
+        <g fill="#4A3426"><rect x="82" y="326" width="16" height="30" rx="4"/><rect x="502" y="326" width="16" height="30" rx="4"/></g>
+        <g stroke="rgba(0,0,0,.38)" stroke-width="2"><rect x="70" y="62" width="460" height="170" rx="46" fill="url(#sofaPat)"/><rect x="70" y="62" width="460" height="170" rx="46" fill="url(#sfLight)" stroke="none"/><rect x="62" y="282" width="476" height="50" rx="12" fill="url(#sofaPat)"/><rect x="62" y="282" width="476" height="50" rx="12" fill="url(#sfLight)" stroke="none"/><rect x="116" y="88" width="178" height="128" rx="34" fill="url(#sofaPat)"/><rect x="116" y="88" width="178" height="128" rx="34" fill="url(#sfLight)" stroke="none"/><rect x="306" y="88" width="178" height="128" rx="34" fill="url(#sofaPat)"/><rect x="306" y="88" width="178" height="128" rx="34" fill="url(#sfLight)" stroke="none"/><rect x="112" y="214" width="188" height="78" rx="22" fill="url(#sofaPat)"/><rect x="112" y="214" width="188" height="78" rx="22" fill="url(#sfLight)" stroke="none"/><rect x="300" y="214" width="188" height="78" rx="22" fill="url(#sofaPat)"/><rect x="300" y="214" width="188" height="78" rx="22" fill="url(#sfLight)" stroke="none"/><rect x="28" y="150" width="96" height="182" rx="38" fill="url(#sofaPat)"/><rect x="28" y="150" width="96" height="182" rx="38" fill="url(#sfSide)" stroke="none"/><rect x="28" y="150" width="96" height="182" rx="38" fill="url(#sfLight)" stroke="none"/><rect x="476" y="150" width="96" height="182" rx="38" fill="url(#sofaPat)"/><rect x="476" y="150" width="96" height="182" rx="38" fill="url(#sfSide)" stroke="none"/><rect x="476" y="150" width="96" height="182" rx="38" fill="url(#sfLight)" stroke="none"/></g>
+        <text id="sofaHint" x="300" y="388" text-anchor="middle" font-size="15" fill="#6b6258" font-family="Tahoma,Arial,sans-serif">ارفع صورة قماش أو التقطها لتظهر على الكنبة</text>
+      </svg></div>
+      <div class="bar noprint">
+        <button type="button" class="primary" id="sofaCam">📷 التقاط صورة</button>
+        <button type="button" id="sofaGal">🖼️ من المعرض</button>
+      </div>
+      <div class="noprint" style="margin-top:12px"><label for="sofaScale">حجم نقشة القماش</label><input type="range" id="sofaScale" min="60" max="360" value="160" style="width:100%"></div>
+      <div class="bar noprint">
+        <button type="button" id="sofaRot">↻ تدوير القماش</button>
+        <button type="button" id="sofaSave">💾 حفظ الصورة</button>
+        <button type="button" id="sofaReset">إعادة</button>
+      </div>
+      <input type="file" id="sofaFileG" accept="image/*" hidden>
+      <input type="file" id="sofaFileC" accept="image/*" capture="environment" hidden>
     </section>
     <div id="fabList"></div>
   </div>
@@ -1030,7 +1060,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   var LED={
     cat:{key:CKEY,arr:cats,box:"catBox",rows:"catRows",cols:"1fr 1fr 36px",f:[{k:"name",ph:"اسم الكتلوك"},{k:"cust",ph:"الزبون ورقم الهاتف"}]},
     whf:{key:FKEY,arr:whf,f:[]},
-    wh:{key:WKEY,arr:whs,box:"whBox",rows:"whRows",flt:function(r){return r.fid===curF;},mk:function(o){o.fid=curF;},cols:"1.3fr .8fr 1fr 36px",f:[{k:"name",ph:"اسم المادة ورقمها"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"},{k:"d",ph:"التاريخ",t:"date"}]}
+    wh:{key:WKEY,arr:whs,box:"whBox",rows:"whRows",flt:function(r){return r.fid===curF;},mk:function(o){o.fid=curF;},cols:"1.3fr .9fr .8fr 36px",f:[{k:"name",ph:"اسم المادة"},{k:"num",ph:"رقم المادة"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"}]}
   };
   function ledSave(c){try{localStorage.setItem(c.key,JSON.stringify(c.arr));}catch(e){}if(window.__ks)window.__ks();}
   function ledNewId(){return String(Date.now())+Math.random().toString(36).slice(2,6);}
@@ -1072,12 +1102,12 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     });
   }
   function hideLed(){
-    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;
+    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("sofaBox").hidden=true;
     document.getElementById("fabQ").hidden=false;document.getElementById("fabList").hidden=false;renderFab();
   }
   function showLed(c){
     document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
-    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;
+    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("sofaBox").hidden=true;
     document.getElementById(c.box).hidden=false;renderLed(c);window.scrollTo(0,0);
   }
   function whMigrate(){
@@ -1108,7 +1138,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function whOpen(){
     document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
-    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=false;
+    document.getElementById("catBox").hidden=true;document.getElementById("sofaBox").hidden=true;document.getElementById("whBox").hidden=false;
     whMigrate();whShowFolders();
   }
   document.getElementById("whNewFolder").addEventListener("click",function(){
@@ -1138,14 +1168,14 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   document.getElementById("whBack").addEventListener("click",function(){if(whView==="rows")whShowFolders();else hideLed();});
   document.getElementById("whPrint").addEventListener("click",function(){
     var fo=null;whf.forEach(function(x){if(x.id===curF)fo=x;});
-    var rows=whs.filter(function(r){return r.fid===curF&&(r.name||r.m);});
+    var rows=whs.filter(function(r){return r.fid===curF&&(r.name||r.num||r.m);});
     if(!rows.length){alert("لا توجد مواد للطباعة");return;}
     var h='<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ترحيل مستودع</title><style>'
       +'body{font-family:Tahoma,Arial,sans-serif;margin:24px;color:#000}h1{font-size:20px;margin:0 0 4px}.d{font-size:13px;color:#444;margin-bottom:14px}'
       +'table{width:100%;border-collapse:collapse;font-size:15px}th,td{border:1px solid #333;padding:8px 10px;text-align:right}th{background:#eee}td.n,th.n{width:44px;text-align:center}td.m,th.m{width:130px;text-align:center}'
       +'tr{page-break-inside:avoid}</style></head><body><h1>ترحيل مستودع'+(fo?' — '+esc(fo.name):'')+'</h1><div class="d">'+new Date().toLocaleDateString("en-GB")+'</div>'
-      +'<table><thead><tr><th class="n">#</th><th>اسم المادة ورقمها</th><th class="m">عدد الأمتار</th></tr></thead><tbody>'
-      +rows.map(function(r,i){return '<tr><td class="n">'+(i+1)+'</td><td>'+esc(r.name||"")+'</td><td class="m">'+esc(r.m||"")+'</td></tr>';}).join("")
+      +'<table><thead><tr><th class="n">#</th><th>اسم المادة</th><th class="m">رقم المادة</th><th class="m">عدد الأمتار</th></tr></thead><tbody>'
+      +rows.map(function(r,i){return '<tr><td class="n">'+(i+1)+'</td><td>'+esc(r.name||"")+'</td><td class="m">'+esc(r.num||"")+'</td><td class="m">'+esc(r.m||"")+'</td></tr>';}).join("")
       +'</tbody></table></body></html>';
     var fr=document.createElement("iframe");
     fr.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
@@ -1154,6 +1184,81 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     setTimeout(function(){fr.contentWindow.focus();fr.contentWindow.print();setTimeout(function(){document.body.removeChild(fr);},1500);},300);
   });
   document.getElementById("fabHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
+
+  /* ---------- sofa fabric try-on ---------- */
+  (function(){
+    var NS="http://www.w3.org/2000/svg",XL="http://www.w3.org/1999/xlink";
+    var pat=document.getElementById("sofaPat"),svg=document.getElementById("sofaSvg"),hint=document.getElementById("sofaHint");
+    var scale=160,rot=0,photo=null;
+    function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
+    function drawPat(){
+      while(pat.firstChild)pat.removeChild(pat.firstChild);
+      if(!photo){
+        pat.setAttribute("width",40);pat.setAttribute("height",40);pat.removeAttribute("patternTransform");
+        pat.appendChild(el("rect",{width:40,height:40,fill:"#C9B79F"}));
+        pat.appendChild(el("path",{d:"M0 40L40 0",stroke:"#B9A68C","stroke-width":2}));
+        return;
+      }
+      var S=scale;
+      pat.setAttribute("width",S*2);pat.setAttribute("height",S*2);
+      pat.setAttribute("patternTransform","rotate("+rot+")");
+      /* mirrored 2x2 tile so the photo edges never show a seam */
+      [[0,0,1,1],[S,0,-1,1],[0,S,1,-1],[S,S,-1,-1]].forEach(function(t){
+        var g=el("g",{transform:"translate("+(t[2]<0?t[0]+S:t[0])+" "+(t[3]<0?t[1]+S:t[1])+") scale("+t[2]+" "+t[3]+")"});
+        var im=el("image",{x:0,y:0,width:S,height:S,preserveAspectRatio:"xMidYMid slice",href:photo});
+        im.setAttributeNS(XL,"xlink:href",photo);
+        g.appendChild(im);pat.appendChild(g);
+      });
+    }
+    function load(file){
+      if(!file)return;
+      var fr=new FileReader();
+      fr.onload=function(){
+        var im=new Image();
+        im.onload=function(){
+          var m=700,w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,m/Math.max(w,h));
+          var c=document.createElement("canvas");c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+          c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+          photo=c.toDataURL("image/jpeg",.88);hint.style.display="none";drawPat();
+        };
+        im.onerror=function(){alert("تعذّر فتح الصورة");};
+        im.src=fr.result;
+      };
+      fr.readAsDataURL(file);
+    }
+    function pick(id){var f=document.getElementById(id);f.value="";f.click();}
+    document.getElementById("sofaOpen").addEventListener("click",function(){
+      document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
+      document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("sofaBox").hidden=false;
+      window.scrollTo(0,0);
+    });
+    document.getElementById("sofaBack").addEventListener("click",hideLed);
+    document.getElementById("sofaCam").addEventListener("click",function(){pick("sofaFileC");});
+    document.getElementById("sofaGal").addEventListener("click",function(){pick("sofaFileG");});
+    document.getElementById("sofaFileC").addEventListener("change",function(){load(this.files&&this.files[0]);});
+    document.getElementById("sofaFileG").addEventListener("change",function(){load(this.files&&this.files[0]);});
+    document.getElementById("sofaScale").addEventListener("input",function(){scale=+this.value;drawPat();});
+    document.getElementById("sofaRot").addEventListener("click",function(){rot=(rot+90)%360;drawPat();});
+    document.getElementById("sofaReset").addEventListener("click",function(){photo=null;rot=0;scale=160;document.getElementById("sofaScale").value=160;hint.style.display="";drawPat();});
+    document.getElementById("sofaSave").addEventListener("click",function(){
+      if(!photo){alert("اختر صورة قماش أولاً");return;}
+      var xml=new XMLSerializer().serializeToString(svg),im=new Image();
+      im.onload=function(){
+        var c=document.createElement("canvas");c.width=1200;c.height=800;
+        c.getContext("2d").drawImage(im,0,0,1200,800);
+        c.toBlob(function(b){
+          if(!b){alert("تعذّر حفظ الصورة");return;}
+          var file=null;try{file=new File([b],"khushfa-sofa.png",{type:"image/png"});}catch(e){}
+          if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file]}).catch(function(){});return;}
+          var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="khushfa-sofa.png";document.body.appendChild(a);a.click();
+          setTimeout(function(){URL.revokeObjectURL(a.href);document.body.removeChild(a);},1500);
+        },"image/png");
+      };
+      im.onerror=function(){alert("تعذّر حفظ الصورة");};
+      im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);
+    });
+    drawPat();
+  })();
 
   var fItemsCur=[];
   function blankItem(){return {name:"",num:"",meters:"",price:""};}
