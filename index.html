@@ -268,9 +268,10 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       <div class="bar noprint"><button type="button" id="whBack">→ رجوع</button><button type="button" id="whPrint" hidden>🖨️ طباعة</button></div>
       <h2 id="whTitle" style="margin:12px 0 6px">ترحيل مستودع</h2>
       <div id="whFolderView">
-        <div class="bar noprint" style="margin-bottom:8px"><button type="button" class="primary" id="whNewFolder">+ مجلد جديد</button></div>
+        <div class="bar noprint" style="margin-bottom:8px"><button type="button" class="primary" id="whNewFolder">+ مجلد جديد</button><button type="button" id="whTrashBtn">🗑️ المحذوفات</button></div>
         <div id="whFolderList"></div>
       </div>
+      <div id="whTrashView" hidden><p style="color:var(--mute);margin:0 0 10px">كل ما يُحذف من الترحيل (منك أو من جهاز آخر) يُحفظ هنا على هذا الهاتف ويمكن استرجاعه.</p><div id="whTrashList"></div></div>
       <div id="whRowsView" hidden>
         <div class="ledhead" style="grid-template-columns:1.3fr .9fr .8fr 36px"><span>اسم المادة</span><span>رقم المادة</span><span>عدد الأمتار</span><span></span></div>
         <div id="whRows"></div>
@@ -1053,13 +1054,13 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   });
 
   /* ---------- catalog loans & warehouse transfers (auto-growing rows) ---------- */
-  var CKEY="khushfa-cat-v1",WKEY="khushfa-wh-v1",FKEY="khushfa-whf-v1",cats=[],whs=[],whf=[],curF=null,whView="folders";
+  var CKEY="khushfa-cat-v1",WKEY="khushfa-wh-v1",WFKEY="khushfa-whf-v1",cats=[],whs=[],whf=[],curF=null,whView="folders";
   try{cats=JSON.parse(localStorage.getItem(CKEY)||"[]")||[];}catch(e){cats=[];}
   try{whs=JSON.parse(localStorage.getItem(WKEY)||"[]")||[];}catch(e){whs=[];}
-  try{whf=JSON.parse(localStorage.getItem(FKEY)||"[]")||[];}catch(e){whf=[];}
+  try{whf=JSON.parse(localStorage.getItem(WFKEY)||"[]")||[];}catch(e){whf=[];}
   var LED={
     cat:{key:CKEY,arr:cats,box:"catBox",rows:"catRows",cols:"1fr 1fr 36px",f:[{k:"name",ph:"اسم الكتلوك"},{k:"cust",ph:"الزبون ورقم الهاتف"}]},
-    whf:{key:FKEY,arr:whf,f:[]},
+    whf:{key:WFKEY,arr:whf,f:[]},
     wh:{key:WKEY,arr:whs,box:"whBox",rows:"whRows",flt:function(r){return r.fid===curF;},mk:function(o){o.fid=curF;},cols:"1.3fr .9fr .8fr 36px",f:[{k:"name",ph:"اسم المادة"},{k:"num",ph:"رقم المادة"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"}]}
   };
   function ledSave(c){try{localStorage.setItem(c.key,JSON.stringify(c.arr));}catch(e){}if(window.__ks)window.__ks();}
@@ -1095,7 +1096,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       var b=e.target.closest(".ledx");if(!b)return;
       var row=b.closest(".ledrow"),id=row.getAttribute("data-id");
       function del(){
-        c.arr.forEach(function(r,i){if(r.id===id)c.arr.splice(i,1);});
+        c.arr.forEach(function(r,i){if(r.id===id){if(c===LED.wh)trashAdd("wh",r);c.arr.splice(i,1);}});
         ledSave(c);renderLed(c);
       }
       if(ledHas(c,row))twoStep("هل تريد حذف هذا السطر؟","سيتم حذف بياناته نهائياً ولا يمكن التراجع.",del);else if(row!==rowsEl.lastElementChild)del();
@@ -1109,6 +1110,86 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
     document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("sofaBox").hidden=true;
     document.getElementById(c.box).hidden=false;renderLed(c);window.scrollTo(0,0);
+  }
+
+  /* ---------- warehouse trash: nothing is lost for good ---------- */
+  var TKEY="khushfa-wh-trash-v1",trash=[];
+  try{trash=JSON.parse(localStorage.getItem(TKEY)||"[]")||[];}catch(e){trash=[];}
+  function trashSave(){
+    var lim=Date.now()-90*86400000;
+    trash=trash.filter(function(x){return x&&x.at>lim;}).slice(-600);
+    try{localStorage.setItem(TKEY,JSON.stringify(trash));}catch(e){}
+  }
+  function trashAdd(t,o){
+    if(!o||!o.id)return;
+    for(var i=0;i<trash.length;i++)if(trash[i].t===t&&String(trash[i].o.id)===String(o.id))trash.splice(i--,1);
+    if(t==="wh"&&!(o.name||o.num||o.m))return;
+    trash.push({t:t,o:JSON.parse(JSON.stringify(o)),at:Date.now()});trashSave();
+  }
+  function renderTrash(){
+    var el=document.getElementById("whTrashList"),h="";
+    var fo=trash.filter(function(x){return x.t==="whf";}).sort(function(a,b){return b.at-a.at;});
+    var ro=trash.filter(function(x){return x.t==="wh";});
+    fo.forEach(function(x){
+      var n=ro.filter(function(r){return r.o.fid===x.o.id;}).length;
+      h+='<div class="ledfold" data-t="whf" data-id="'+esc(x.o.id)+'"><button type="button" class="fopen" disabled style="opacity:1">📁 '+esc(x.o.name)+' <small>('+n+' مادة — '+new Date(x.at).toLocaleDateString("en-GB")+')</small></button><button type="button" class="trest">استرجاع</button></div>';
+    });
+    var single=ro.filter(function(r){return !fo.some(function(f){return f.o.id===r.o.fid;});}).sort(function(a,b){return b.at-a.at;});
+    single.forEach(function(x){
+      h+='<div class="ledfold" data-t="wh" data-id="'+esc(x.o.id)+'"><button type="button" class="fopen" disabled style="opacity:1">'+esc((x.o.name||"")+" "+(x.o.num||"")+" — "+(x.o.m||"")+" م")+' <small>('+new Date(x.at).toLocaleDateString("en-GB")+')</small></button><button type="button" class="trest">استرجاع</button></div>';
+    });
+    el.innerHTML=h||'<p style="color:var(--mute)">لا يوجد شيء محذوف.</p>';
+  }
+  function whShowTrash(){
+    whView="trash";curF=null;
+    document.getElementById("whFolderView").hidden=true;document.getElementById("whRowsView").hidden=true;document.getElementById("whTrashView").hidden=false;
+    document.getElementById("whPrint").hidden=true;document.getElementById("whTitle").textContent="🗑️ المحذوفات";
+    renderTrash();window.scrollTo(0,0);
+  }
+  document.getElementById("whTrashBtn").addEventListener("click",whShowTrash);
+  document.getElementById("whTrashList").addEventListener("click",function(e){
+    var b=e.target.closest(".trest");if(!b)return;
+    var row=b.closest(".ledfold"),t=row.getAttribute("data-t"),id=row.getAttribute("data-id");
+    function has(a,i){return a.some(function(r){return String(r.id)===String(i);});}
+    if(t==="whf"){
+      var f=trash.filter(function(x){return x.t==="whf"&&String(x.o.id)===id;})[0];if(!f)return;
+      if(!has(whf,f.o.id))whf.push(f.o);
+      trash.filter(function(x){return x.t==="wh"&&x.o.fid===f.o.id;}).forEach(function(x){if(!has(whs,x.o.id))whs.push(x.o);});
+      trash=trash.filter(function(x){return !(x.t==="whf"&&String(x.o.id)===id)&&!(x.t==="wh"&&x.o.fid===f.o.id);});
+      trashSave();ledSave(LED.whf);ledSave(LED.wh);
+    }else{
+      var r=trash.filter(function(x){return x.t==="wh"&&String(x.o.id)===id;})[0];if(!r)return;
+      if(!whf.some(function(x){return x.id===r.o.fid;})){alert("المجلد الذي كانت فيه هذه المادة غير موجود. استرجع المجلد أولاً.");return;}
+      if(!has(whs,r.o.id))whs.push(r.o);
+      trash=trash.filter(function(x){return !(x.t==="wh"&&String(x.o.id)===id);});
+      trashSave();ledSave(LED.wh);
+    }
+    renderTrash();
+  });
+
+  /* ---------- repair: fabric customers that got mixed into the warehouse folders ---------- */
+  function isFabLike(o){return !!o&&(typeof o.id==="number"||"cust" in o||"items" in o||"inv" in o||"date" in o||"phone" in o);}
+  function repairData(){
+    var chg=false,fch=false,i;
+    for(i=whf.length-1;i>=0;i--){
+      var o=whf[i];
+      if(isFabLike(o)){
+        var idx=-1;fabs.forEach(function(f,k){if(String(f.id)===String(o.id))idx=k;});
+        if(idx<0)fabs.push(o);else fabs[idx]=o;
+        fch=true;whf.splice(i,1);chg=true;
+      }
+    }
+    var ids={},made={};whf.forEach(function(f){ids[f.id]=1;});
+    whs.forEach(function(r){
+      if(!r.fid||ids[r.fid]||made[r.fid])return;
+      var ts=parseInt(String(r.fid).slice(0,13),10),nm;
+      if(r.fid==="0legacy")nm="ترحيلة سابقة";
+      else if(ts>1e12&&ts<4e12)nm="ترحيلة "+new Date(ts).toLocaleDateString("en-GB")+" (مستعادة)";
+      else nm="ترحيلة مستعادة";
+      whf.push({id:r.fid,name:nm});made[r.fid]=1;chg=true;
+    });
+    if(fch)fabPersist();
+    if(chg)ledSave(LED.whf);
   }
   function whMigrate(){
     if(!whs.some(function(r){return !r.fid;}))return;
@@ -1125,14 +1206,14 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function whShowFolders(){
     whView="folders";curF=null;
-    document.getElementById("whFolderView").hidden=false;document.getElementById("whRowsView").hidden=true;
+    document.getElementById("whFolderView").hidden=false;document.getElementById("whRowsView").hidden=true;document.getElementById("whTrashView").hidden=true;
     document.getElementById("whPrint").hidden=true;document.getElementById("whTitle").textContent="ترحيل مستودع";
     renderFolders();window.scrollTo(0,0);
   }
   function whShowRows(id){
     var f=null;whf.forEach(function(x){if(x.id===id)f=x;});if(!f)return;
     whView="rows";curF=id;
-    document.getElementById("whFolderView").hidden=true;document.getElementById("whRowsView").hidden=false;
+    document.getElementById("whFolderView").hidden=true;document.getElementById("whRowsView").hidden=false;document.getElementById("whTrashView").hidden=true;
     document.getElementById("whPrint").hidden=false;document.getElementById("whTitle").textContent="📁 "+f.name;
     renderLed(LED.wh);window.scrollTo(0,0);
   }
@@ -1154,18 +1235,20 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       var nm=prompt("اسم المجلد",f.name);if(nm===null)return;nm=nm.trim();if(!nm)return;
       f.name=nm;ledSave(LED.whf);renderFolders();
     }else if(e.target.closest(".fdel")){
-      twoStep("هل تريد حذف المجلد؟","سيتم حذف المجلد وكل المواد داخله نهائياً.",function(){
-        for(var i=whs.length-1;i>=0;i--)if(whs[i].fid===id)whs.splice(i,1);
+      twoStep("هل تريد حذف المجلد؟","سيُنقل المجلد وكل المواد داخله إلى المحذوفات ويمكن استرجاعه.",function(){
+        trashAdd("whf",f);
+        for(var i=whs.length-1;i>=0;i--)if(whs[i].fid===id){trashAdd("wh",whs[i]);whs.splice(i,1);}
         whf.splice(whf.indexOf(f),1);ledSave(LED.wh);ledSave(LED.whf);renderFolders();
       });
     }
   });
+  repairData();
   whMigrate();
   ledBind(LED.cat);ledBind(LED.wh);
   document.getElementById("catOpen").addEventListener("click",function(){showLed(LED.cat);});
   document.getElementById("whOpen").addEventListener("click",whOpen);
   document.getElementById("catBack").addEventListener("click",hideLed);
-  document.getElementById("whBack").addEventListener("click",function(){if(whView==="rows")whShowFolders();else hideLed();});
+  document.getElementById("whBack").addEventListener("click",function(){if(whView!=="folders")whShowFolders();else hideLed();});
   document.getElementById("whPrint").addEventListener("click",function(){
     var fo=null;whf.forEach(function(x){if(x.id===curF)fo=x;});
     var rows=whs.filter(function(r){return r.fid===curF&&(r.name||r.num||r.m);});
@@ -1414,7 +1497,8 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         [["cat","cats"],["wh","whs"],["whf","whf"]].forEach(function(p){
           var c=LED[p[0]],m=ch[p[1]]||{},ks=Object.keys(m);if(!ks.length)return;
           ks.forEach(function(id){
-            for(var i=c.arr.length-1;i>=0;i--)if(String(c.arr[i].id)===id)c.arr.splice(i,1);
+            if(p[0]==="whf"&&m[id]&&isFabLike(m[id]))return;
+            for(var i=c.arr.length-1;i>=0;i--)if(String(c.arr[i].id)===id){if(m[id]===null&&(p[0]==="wh"||p[0]==="whf"))trashAdd(p[0],c.arr[i]);c.arr.splice(i,1);}
             if(m[id]!==null)c.arr.push(m[id]);
           });
           c.arr.sort(function(a,b){return String(a.id)<String(b.id)?-1:1;});
@@ -1427,7 +1511,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         if(!listView.hidden)renderList();
         if(!fabView.hidden&&document.getElementById("fabForm").hidden)renderFab();
         if(!homeView.hidden)renderRemind();
-        var cb=document.getElementById("catBox"),wb=document.getElementById("whBox");if(!cb.hidden&&!cb.contains(document.activeElement))renderLed(LED.cat);if(!wb.hidden){if(whView==="folders")renderFolders();else if(!wb.contains(document.activeElement)){if(!whf.some(function(f){return f.id===curF;}))whShowFolders();else renderLed(LED.wh);}}
+        var cb=document.getElementById("catBox"),wb=document.getElementById("whBox");if(!cb.hidden&&!cb.contains(document.activeElement))renderLed(LED.cat);if(!wb.hidden){if(whView==="trash")renderTrash();else if(whView==="folders")renderFolders();else if(!wb.contains(document.activeElement)){if(!whf.some(function(f){return f.id===curF;}))whShowFolders();else renderLed(LED.wh);}}
       }catch(e){}
     }
   };
