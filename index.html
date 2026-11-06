@@ -236,7 +236,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   </div>
 
   <div id="fabView" hidden>
-    <div class="bar noprint"><button type="button" id="fabHome" aria-label="الرئيسية" style="flex:0 0 56px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></button><button type="button" class="primary" id="fabNew">+ زبون جديد</button><button type="button" id="catOpen">📖 إعارة كتلوك</button><button type="button" id="whOpen">📦 ترحيل مستودع</button></div>
+    <div class="bar noprint"><button type="button" id="fabHome" aria-label="الرئيسية" style="flex:0 0 56px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/></svg></button><button type="button" class="primary" id="fabNew">+ زبون جديد</button><button type="button" id="catOpen">📖 إعارة كتلوك</button><button type="button" id="whOpen">📦 ترحيل مستودع</button><button type="button" id="invOpen">🧵 جرد مستودع</button></div>
     <h2 class="sub" style="margin:10px 0">أقمشة كنب - تشكيلات</h2>
     <div class="bar noprint" style="margin:0 0 10px"><button type="button" id="sofaOpen">🛋️ تجربة القماش على الكنبة</button></div>
     <input id="fabQ" type="search" placeholder="بحث: زبون أو مادة أو رقم" style="width:100%;box-sizing:border-box;padding:10px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit">
@@ -275,6 +275,21 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       <div id="whRowsView" hidden>
         <div class="ledhead" style="grid-template-columns:1.3fr .9fr .8fr 36px"><span>اسم المادة</span><span>رقم المادة</span><span>عدد الأمتار</span><span></span></div>
         <div id="whRows"></div>
+      </div>
+    </section>
+    <section class="job led" id="invBox" hidden>
+      <div class="bar noprint"><button type="button" id="invBack">→ رجوع</button><button type="button" id="invPrint" hidden>🖨️ طباعة 80 مم</button><button type="button" id="invSend" hidden>💻 إرسال للابتوب</button></div>
+      <h2 id="invTitle" style="margin:12px 0 6px">جرد مستودع</h2>
+      <div id="invGroupView">
+        <div class="bar noprint" style="margin-bottom:8px"><button type="button" class="primary" id="invNewGroup">+ مجموعة جديدة</button></div>
+        <div class="noprint" style="display:flex;gap:6px;margin-bottom:10px"><input id="invQ" type="search" placeholder="ابحث عن مادة" aria-label="ابحث عن مادة" style="flex:1;min-width:0;box-sizing:border-box;padding:10px;min-height:44px;font-size:16px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit"><button type="button" id="invSearchBtn" style="flex:0 0 auto">🔍 بحث</button></div>
+        <div id="invGroupList"></div>
+        <div id="invResults" hidden></div>
+      </div>
+      <div id="invRowsView" hidden>
+        <div class="ledhead" style="grid-template-columns:1.6fr .9fr 36px"><span>اسم المادة</span><span>عدد الأمتار</span><span></span></div>
+        <div id="invRows"></div>
+        <div id="invTotal" style="margin-top:10px;font-weight:700"></div>
       </div>
     </section>
     <section class="job" id="sofaBox" hidden>
@@ -1065,13 +1080,17 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   });
 
   /* ---------- catalog loans & warehouse transfers (auto-growing rows) ---------- */
-  var CKEY="khushfa-cat-v1",WKEY="khushfa-wh-v1",WFKEY="khushfa-whf-v1",cats=[],whs=[],whf=[],curF=null,whView="folders";
+  var CKEY="khushfa-cat-v1",WKEY="khushfa-wh-v1",WFKEY="khushfa-whf-v1",IKEY="khushfa-inv-v1",IGKEY="khushfa-invg-v1",cats=[],whs=[],whf=[],invs=[],invg=[],curF=null,curG=null,invView="groups",whView="folders";
   try{cats=JSON.parse(localStorage.getItem(CKEY)||"[]")||[];}catch(e){cats=[];}
   try{whs=JSON.parse(localStorage.getItem(WKEY)||"[]")||[];}catch(e){whs=[];}
   try{whf=JSON.parse(localStorage.getItem(WFKEY)||"[]")||[];}catch(e){whf=[];}
+  try{invs=JSON.parse(localStorage.getItem(IKEY)||"[]")||[];}catch(e){invs=[];}
+  try{invg=JSON.parse(localStorage.getItem(IGKEY)||"[]")||[];}catch(e){invg=[];}
   var LED={
     cat:{key:CKEY,arr:cats,box:"catBox",rows:"catRows",cols:"1fr 1fr 36px",f:[{k:"name",ph:"اسم الكتلوك"},{k:"cust",ph:"الزبون ورقم الهاتف"}]},
     whf:{key:WFKEY,arr:whf,f:[]},
+    invg:{key:IGKEY,arr:invg,f:[]},
+    inv:{key:IKEY,arr:invs,box:"invBox",rows:"invRows",flt:function(r){return r.gid===curG;},mk:function(o){o.gid=curG;},cols:"1.6fr .9fr 36px",f:[{k:"name",ph:"اسم المادة"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"}]},
     wh:{key:WKEY,arr:whs,box:"whBox",rows:"whRows",flt:function(r){return r.fid===curF;},mk:function(o){o.fid=curF;},cols:"1.3fr .9fr .8fr 36px",f:[{k:"name",ph:"اسم المادة"},{k:"num",ph:"رقم المادة"},{k:"m",ph:"عدد الأمتار",t:"number",im:"decimal"}]}
   };
   function ledSave(c){try{localStorage.setItem(c.key,JSON.stringify(c.arr));}catch(e){}if(window.__ks)window.__ks();}
@@ -1114,12 +1133,12 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     });
   }
   function hideLed(){
-    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("sofaBox").hidden=true;
+    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("invBox").hidden=true;document.getElementById("sofaBox").hidden=true;
     document.getElementById("fabQ").hidden=false;document.getElementById("fabList").hidden=false;renderFab();
   }
   function showLed(c){
     document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
-    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("sofaBox").hidden=true;
+    document.getElementById("catBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("invBox").hidden=true;document.getElementById("sofaBox").hidden=true;
     document.getElementById(c.box).hidden=false;renderLed(c);window.scrollTo(0,0);
   }
 
@@ -1230,7 +1249,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function whOpen(){
     document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
-    document.getElementById("catBox").hidden=true;document.getElementById("sofaBox").hidden=true;document.getElementById("whBox").hidden=false;
+    document.getElementById("catBox").hidden=true;document.getElementById("sofaBox").hidden=true;document.getElementById("invBox").hidden=true;document.getElementById("whBox").hidden=false;
     whMigrate();whShowFolders();
   }
   document.getElementById("whNewFolder").addEventListener("click",function(){
@@ -1277,6 +1296,94 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     var d=fr.contentWindow.document;d.open();d.write(h);d.close();
     setTimeout(function(){fr.contentWindow.focus();fr.contentWindow.print();setTimeout(function(){document.body.removeChild(fr);},1500);},300);
   });
+
+  /* ---------- warehouse inventory (جرد مستودع): groups -> materials ---------- */
+  function invNorm(t){return String(t==null?"":t).toLowerCase().replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[٠-٩]/g,function(d){return String(d.charCodeAt(0)-1632);}).trim();}
+  function invFmt(n){return String(Math.round(n*100)/100);}
+  function invGroupOf(id){var f=null;invg.forEach(function(x){if(x.id===id)f=x;});return f;}
+  function invSum(arr){var t=0;arr.forEach(function(r){var v=parseFloat(String(r.m||"").replace(",","."));if(!isNaN(v))t+=v;});return t;}
+  function renderInvGroups(){
+    var el=document.getElementById("invGroupList");
+    if(!invg.length){el.innerHTML='<p style="color:var(--mute)">لا توجد مجموعات بعد. اضغط «+ مجموعة جديدة».</p>';return;}
+    el.innerHTML=invg.slice().sort(function(a,b){return String(a.name||"").localeCompare(String(b.name||""),"ar");}).map(function(g){
+      var rows=invs.filter(function(r){return r.gid===g.id;});
+      return '<div class="ledfold" data-id="'+esc(g.id)+'"><button type="button" class="fopen">📁 '+esc(g.name)+' <small>('+rows.length+' مادة — '+invFmt(invSum(rows))+' م)</small></button><button type="button" class="fren" aria-label="تعديل الاسم">✎</button><button type="button" class="fdel ledx" aria-label="حذف المجموعة">✕</button></div>';
+    }).join("");
+  }
+  function invShowGroups(){
+    invView="groups";curG=null;
+    document.getElementById("invGroupView").hidden=false;document.getElementById("invRowsView").hidden=true;
+    document.getElementById("invTitle").textContent="جرد مستودع";document.getElementById("invPrint").hidden=true;document.getElementById("invSend").hidden=true;
+    invSearch();renderInvGroups();window.scrollTo(0,0);
+  }
+  function invUpdTotal(){
+    var rows=invs.filter(function(r){return r.gid===curG;});
+    document.getElementById("invTotal").textContent="عدد المواد: "+rows.length+" — مجموع الأمتار: "+invFmt(invSum(rows))+" م";
+  }
+  function invShowRows(id){
+    var g=invGroupOf(id);if(!g)return;
+    invView="rows";curG=id;
+    document.getElementById("invGroupView").hidden=true;document.getElementById("invRowsView").hidden=false;
+    document.getElementById("invTitle").textContent="📁 "+g.name;document.getElementById("invPrint").hidden=false;document.getElementById("invSend").hidden=false;
+    renderLed(LED.inv);invUpdTotal();window.scrollTo(0,0);
+  }
+  function invOpen(){
+    document.getElementById("fabForm").hidden=true;document.getElementById("fabQ").hidden=true;document.getElementById("fabList").hidden=true;
+    document.getElementById("catBox").hidden=true;document.getElementById("sofaBox").hidden=true;document.getElementById("whBox").hidden=true;document.getElementById("invBox").hidden=false;
+    document.getElementById("invQ").value="";invShowGroups();
+  }
+  function invSearch(){
+    var q=invNorm(document.getElementById("invQ").value),res=document.getElementById("invResults"),gl=document.getElementById("invGroupList");
+    if(!q){res.hidden=true;res.innerHTML="";gl.hidden=false;return;}
+    var hits=invs.filter(function(r){return invNorm(r.name).indexOf(q)>-1&&invGroupOf(r.gid);});
+    gl.hidden=true;res.hidden=false;
+    if(!hits.length){res.innerHTML='<p style="color:var(--mute)">لا توجد مادة بهذا الاسم.</p>';return;}
+    res.innerHTML='<p style="margin:0 0 8px;font-weight:700">'+hits.length+' نتيجة — مجموع الأمتار: '+invFmt(invSum(hits))+' م</p>'+hits.map(function(r){
+      var g=invGroupOf(r.gid);
+      return '<div class="ledfold"><button type="button" class="fopen" data-g="'+esc(r.gid)+'">'+esc(r.name||"")+' — '+esc(r.m||"0")+' م <small>(📁 '+esc(g.name)+')</small></button></div>';
+    }).join("");
+  }
+  document.getElementById("invNewGroup").addEventListener("click",function(){
+    var nm=prompt("اسم المجموعة (مثال: أقمشة ستائر، مخمل، قطن)","");
+    if(nm===null)return;nm=nm.trim();if(!nm)return;
+    var g={id:ledNewId(),name:nm};invg.push(g);ledSave(LED.invg);document.getElementById("invQ").value="";invShowRows(g.id);
+  });
+  document.getElementById("invSearchBtn").addEventListener("click",invSearch);
+  document.getElementById("invQ").addEventListener("input",invSearch);
+  document.getElementById("invQ").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();invSearch();this.blur();}});
+  document.getElementById("invResults").addEventListener("click",function(e){
+    var b=e.target.closest(".fopen");if(!b)return;
+    document.getElementById("invQ").value="";invShowRows(b.getAttribute("data-g"));
+  });
+  document.getElementById("invGroupList").addEventListener("click",function(e){
+    var row=e.target.closest(".ledfold");if(!row)return;
+    var id=row.getAttribute("data-id"),g=invGroupOf(id);if(!g)return;
+    if(e.target.closest(".fopen")){invShowRows(id);}
+    else if(e.target.closest(".fren")){
+      var nm=prompt("اسم المجموعة",g.name);if(nm===null)return;nm=nm.trim();if(!nm)return;
+      g.name=nm;ledSave(LED.invg);renderInvGroups();
+    }else if(e.target.closest(".fdel")){
+      twoStep("هل تريد حذف المجموعة؟","سيتم حذف المجموعة وكل المواد داخلها نهائياً ولا يمكن التراجع.",function(){
+        for(var i=invs.length-1;i>=0;i--)if(invs[i].gid===id)invs.splice(i,1);
+        invg.splice(invg.indexOf(g),1);ledSave(LED.inv);ledSave(LED.invg);renderInvGroups();
+      });
+    }
+  });
+  ledBind(LED.inv);
+  document.getElementById("invRows").addEventListener("input",invUpdTotal);
+  document.getElementById("invRows").addEventListener("click",function(){setTimeout(invUpdTotal,0);});
+  function invSlip(){
+    var g=invGroupOf(curG);
+    var rows=invs.filter(function(r){return r.gid===curG&&(r.name||r.m);});
+    if(!g||!rows.length){alert("لا توجد مواد للطباعة");return null;}
+    return {title:"جرد مستودع",kind:g.name,noName:true,name:"",phone:"",addr:"",date:new Date().toLocaleDateString("en-GB"),
+      items:rows.map(function(r){return {t:r.name||"مادة",v:r.m?invFmt(parseFloat(String(r.m).replace(",","."))||0)+" م":""};}),
+      tot:[["عدد المواد",String(rows.length)],["مجموع الأمتار",invFmt(invSum(rows))+" م","rb"]],note:null};
+  }
+  document.getElementById("invPrint").addEventListener("click",function(){var o=invSlip();if(o)printReceipt(o);});
+  document.getElementById("invSend").addEventListener("click",function(){var o=invSlip();if(o)sendToLaptop(o);});
+  document.getElementById("invOpen").addEventListener("click",invOpen);
+  document.getElementById("invBack").addEventListener("click",function(){if(invView!=="groups")invShowGroups();else hideLed();});
   document.getElementById("fabHome").addEventListener("click",function(){if(depth>0)history.go(-depth);else showHome();});
 
   /* ---------- sofa fabric try-on (real photo + smart selection) ---------- */
@@ -1489,7 +1596,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     });
     /* ----- wiring ----- */
     $("sofaOpen").addEventListener("click",function(){
-      $("fabForm").hidden=true;$("fabQ").hidden=true;$("fabList").hidden=true;$("catBox").hidden=true;$("whBox").hidden=true;$("sofaBox").hidden=false;
+      $("fabForm").hidden=true;$("fabQ").hidden=true;$("fabList").hidden=true;$("catBox").hidden=true;$("whBox").hidden=true;$("invBox").hidden=true;$("sofaBox").hidden=false;
       scenes();window.scrollTo(0,0);
     });
     $("sofaBack").addEventListener("click",hideLed);
@@ -1614,7 +1721,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function doBackup(){
     persist();fabPersist();
     allPhotos().catch(function(){return {};}).then(function(ph){
-      var data={app:"khushfa-measure",version:1,date:new Date().toISOString(),store:store,fabs:fabs,cats:cats,whs:whs,whf:whf,photos:ph};
+      var data={app:"khushfa-measure",version:1,date:new Date().toISOString(),store:store,fabs:fabs,cats:cats,whs:whs,whf:whf,inv:invs,invg:invg,photos:ph};
       var blob=new Blob([JSON.stringify(data)],{type:"application/json"});
       var name="khushfa-backup-"+ftoday()+".json";
       try{localStorage.setItem(BKKEY,ftoday());}catch(e){}
@@ -1643,7 +1750,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       });
       var have={};fabs.forEach(function(f){have[f.id]=1;});
       (data.fabs||[]).forEach(function(f){if(!have[f.id])fabs.push(f);});
-      [["cat",data.cats],["wh",data.whs],["whf",data.whf]].forEach(function(p){var c=LED[p[0]],h={};c.arr.forEach(function(r){h[r.id]=1;});(p[1]||[]).forEach(function(r){if(r&&!h[r.id])c.arr.push(r);});ledSave(c);});
+      [["cat",data.cats],["wh",data.whs],["whf",data.whf],["inv",data.inv],["invg",data.invg]].forEach(function(p){var c=LED[p[0]],h={};c.arr.forEach(function(r){h[r.id]=1;});(p[1]||[]).forEach(function(r){if(r&&!h[r.id])c.arr.push(r);});ledSave(c);});
       var ph=data.photos||{},ids=Object.keys(ph);
       ids.reduce(function(p,id){return p.then(function(){return putPhoto(id,ph[id]);});},Promise.resolve())
         .catch(function(){})
@@ -1661,7 +1768,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   window.KAPP={
     onPrint:function(id,x){try{pqIn(id,x);}catch(e){}},
     isEmpty:function(j){try{return isEmpty(j);}catch(e){return false;}},
-    snap:function(){return {jobs:store.jobs,fabs:fabs,cats:cats,whs:whs,whf:whf,open:{job:(formView.hidden?null:(isSplit()&&!formView.contains(document.activeElement)?null:(state&&state.id))),fab:(document.getElementById("fabForm").hidden?null:(fabEdit==null?null:String(fabEdit)))}};},
+    snap:function(){return {jobs:store.jobs,fabs:fabs,cats:cats,whs:whs,whf:whf,inv:invs,invg:invg,open:{job:(formView.hidden?null:(isSplit()&&!formView.contains(document.activeElement)?null:(state&&state.id))),fab:(document.getElementById("fabForm").hidden?null:(fabEdit==null?null:String(fabEdit)))}};},
     applyRemote:function(ch){
       window.__ksApplying=true;
       try{
@@ -1686,7 +1793,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
           });
           fabPersist();
         }
-        [["cat","cats"],["wh","whs"],["whf","whf"]].forEach(function(p){
+        [["cat","cats"],["wh","whs"],["whf","whf"],["inv","inv"],["invg","invg"]].forEach(function(p){
           var c=LED[p[0]],m=ch[p[1]]||{},ks=Object.keys(m);if(!ks.length)return;
           ks.forEach(function(id){
             if(p[0]==="whf"&&m[id]&&isFabLike(m[id]))return;
@@ -1704,6 +1811,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
         if(!fabView.hidden&&document.getElementById("fabForm").hidden)renderFab();
         if(!homeView.hidden)renderRemind();
         var cb=document.getElementById("catBox"),wb=document.getElementById("whBox");if(!cb.hidden&&!cb.contains(document.activeElement))renderLed(LED.cat);if(!wb.hidden){if(whView==="trash")renderTrash();else if(whView==="folders")renderFolders();else if(!wb.contains(document.activeElement)){if(!whf.some(function(f){return f.id===curF;}))whShowFolders();else renderLed(LED.wh);}}
+        var ib=document.getElementById("invBox");if(!ib.hidden){if(invView==="groups")renderInvGroups();else if(!ib.contains(document.activeElement)){if(!invGroupOf(curG))invShowGroups();else{renderLed(LED.inv);invUpdTotal();}}}
       }catch(e){}
     }
   };
@@ -1745,7 +1853,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   function receiptHtml(o){
     var h='<div class="rc-head"><img id="rcLogo" alt=""><div class="rc-s">ستائر وأقمشة مفروشات</div></div><div class="rc-sep"></div>';
     h+='<div class="rc-title">'+esc(o.title||"فاتورة")+' — '+esc(o.kind)+'</div>';
-    h+=rRow("الزبون",esc(o.name||"-"));
+    if(!o.noName)h+=rRow("الزبون",esc(o.name||"-"));
     if(o.phone)h+=rRow("الهاتف",ltr(o.phone));
     if(o.addr)h+=rRow("العنوان",esc(o.addr));
     h+=rRow("التاريخ",ltr(o.date||""));
@@ -1885,7 +1993,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   var MK="khushfa-sync-meta",meta=null,fb=null,uid=null,email="",timer=null,unsubs=[],state="loading",lastErr="";
   try{meta=JSON.parse(localStorage.getItem(MK)||"null");}catch(e){}
   if(!meta||!meta.jobs||!meta.fabs)meta={jobs:{},fabs:{},uid:null};
-  meta.cats=meta.cats||{};meta.whs=meta.whs||{};meta.whf=meta.whf||{};
+  meta.cats=meta.cats||{};meta.whs=meta.whs||{};meta.whf=meta.whf||{};meta.inv=meta.inv||{};meta.invg=meta.invg||{};
   function saveMeta(){try{localStorage.setItem(MK,JSON.stringify(meta));}catch(e){}}
   function hash(s){var h=5381,i=s.length;while(i)h=(h*33)^s.charCodeAt(--i);return (h>>>0).toString(36)+"."+s.length;}
   function strip(j,zero){var c=JSON.parse(JSON.stringify(j));(c.rooms||[]).forEach(function(r){(r.wins||[]).forEach(function(w){w.photos=[];});});if(zero)c.updated=0;return JSON.stringify(c);}
@@ -1964,7 +2072,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
       var m=meta.fabs[id];if(m.del||seen[id])return;
       u=Date.now();put("fabs",id,{u:u,del:true,d:""});meta.fabs[id]={h:"",u:u,del:true};ch=true;
     });
-    [["cats"],["whs"],["whf"]].forEach(function(p){
+    [["cats"],["whs"],["whf"],["inv"],["invg"]].forEach(function(p){
       var col=p[0],arr=sn[col]||[],seen2={};
       arr.forEach(function(f){
         var id=String(f.id);seen2[id]=1;
@@ -1998,7 +2106,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   /* ---------- pull (cloud -> local) ---------- */
   function onDocs(col,docs){
     if(!window.KAPP)return;
-    var sn=window.KAPP.snap(),ch={jobs:{},fabs:{},cats:{},whs:{},whf:{}},us={},any=false;
+    var sn=window.KAPP.snap(),ch={jobs:{},fabs:{},cats:{},whs:{},whf:{},inv:{},invg:{}},us={},any=false;
     docs.forEach(function(d){
       var id=d.id,x=d.data(),m=meta[col][id];
       if(col==="jobs"&&String(id).indexOf("pq-")===0){if(x&&window.KAPP&&window.KAPP.onPrint)window.KAPP.onPrint(id,x);return;}
@@ -2029,7 +2137,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
   }
   function listen(){
     unsubs.forEach(function(f){try{f();}catch(e){}});unsubs=[];
-    ["jobs","fabs","cats","whs","whf"].forEach(function(col){
+    ["jobs","fabs","cats","whs","whf","inv","invg"].forEach(function(col){
       unsubs.push(fb.onSnapshot(fb.collection(fb.db,"users",uid,col),function(s){
         var arr=[];s.docChanges().forEach(function(c){if(c.type!=="removed")arr.push(c.doc);});
         if(arr.length)onDocs(col,arr);
@@ -2048,7 +2156,7 @@ button.del{border-color:var(--danger);color:var(--danger);min-height:38px;paddin
     A.onAuthStateChanged(auth,function(u){
       if(u){
         uid=u.uid;email=u.email||"";
-        if(meta.uid&&meta.uid!==uid)meta={jobs:{},fabs:{},cats:{},whs:{},whf:{},uid:uid};
+        if(meta.uid&&meta.uid!==uid)meta={jobs:{},fabs:{},cats:{},whs:{},whf:{},inv:{},invg:{},uid:uid};
         meta.uid=uid;saveMeta();
         listen();push();
       }else{
